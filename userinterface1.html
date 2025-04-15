@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Spare Parts Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .spare-part, .product {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th, .table td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .table th {
+            background: #f4f4f4;
+        }
+
+        img {
+            max-width: 100px;
+            height: auto;
+        }
+
+        /* Tabbed Interface Styles */
+        .tab {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        .tab button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 10px;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Search Bar */
+        #searchBar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* Total Price */
+        #totalPrice {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Tabbed Interface -->
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'Home')">Home</button>
+            <button class="tablinks" onclick="openTab(event, 'YourOrders')">Your Orders</button>
+            <button class="tablinks" onclick="openTab(event, 'TrackOrder')">Track Order</button>
+        </div>
+
+        <!-- Home Tab -->
+        <div id="Home" class="tabcontent">
+            <h2>Home</h2>
+            <!-- Search Bar -->
+            <input type="text" id="searchBar" placeholder="Search for spare parts..." oninput="filterSpareParts()">
+            <div class="spare-parts" id="spareParts"></div>
+
+            <!-- Cart -->
+            <div id="cart">
+                <h2>Cart</h2>
+                <table class="table" id="cartTable">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <!-- Total Price -->
+                <div id="totalPrice">Total: $0.00</div>
+                <button class="btn" onclick="placeOrder()">Place Order</button>
+            </div>
+        </div>
+
+        <!-- Your Orders Tab -->
+        <div id="YourOrders" class="tabcontent">
+            <h2>Your Orders</h2>
+            <table class="table" id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Track Order Tab -->
+        <div id="TrackOrder" class="tabcontent">
+            <h2>Track Order</h2>
+            <!-- Google Map Container -->
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2-eh6sLvD9iUd6vXcznB7MjhdZjdrY5w",
+            authDomain: "parts-a51c8.firebaseapp.com",
+            databaseURL: "https://parts-a51c8-default-rtdb.firebaseio.com/",
+            projectId: "parts-a51c8",
+            storageBucket: "parts-a51c8.appspot.com",
+            messagingSenderId: "503866486340",
+            appId: "1:503866486340:web:fcc777e98414973ea55611"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Global variables
+        let cart = [];
+        let sparePartsData = {};
+
+        // Load spare parts from Firebase
+        function loadSpareParts() {
+            const sparePartsRef = ref(database, "spareParts");
+            onValue(sparePartsRef, (snapshot) => {
+                sparePartsData = snapshot.val(); // Store spare parts data
+                filterSpareParts(); // Display all parts initially
+            });
+        }
+
+        // Filter spare parts based on search input
+        function filterSpareParts() {
+            const searchQuery = document.getElementById("searchBar").value.toLowerCase();
+            const sparePartsContainer = document.getElementById("spareParts");
+            sparePartsContainer.innerHTML = "";
+
+            for (const key in sparePartsData) {
+                const part = sparePartsData[key];
+                if (part.name.toLowerCase().includes(searchQuery)) {
+                    const imageUrl = part.imageUrl || "https://placehold.co/100"; // Fallback image
+                    const partHTML = `
+                        <div class="spare-part">
+                            <img src="${imageUrl}" alt="${part.name}" width="100">
+                            <h3>${part.name}</h3>
+                            <p>Price: $${part.price}</p>
+                            <p>Stock: ${part.stock}</p>
+                            <p>Sold: ${part.sold || 0}</p>
+                            <button class="btn" onclick="addToCart('${key}')">Add to Cart</button>
+                        </div>
+                    `;
+                    sparePartsContainer.innerHTML += partHTML;
+                }
+            }
+        }
+
+        // Add product to cart
+        window.addToCart = function (productId) {
+            const productsRef = ref(database, `spareParts/${productId}`);
+            onValue(productsRef, (snapshot) => {
+                const product = snapshot.val();
+                if (!product) {
+                    console.error("Product not found in database.");
+                    return;
+                }
+
+                const existingItem = cart.find((item) => item.id === productId);
+
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({ ...product, id: productId, quantity: 1 });
+                }
+
+                updateCartDisplay();
+            });
+        };
+
+        // Update cart display
+        function updateCartDisplay() {
+            const cartTable = document.getElementById("cartTable").getElementsByTagName("tbody")[0];
+            cartTable.innerHTML = "";
+
+            let total = 0;
+
+            cart.forEach((item) => {
+                const row = cartTable.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.price * item.quantity}</td>
+                    <td>
+                        <button class="btn" onclick="removeFromCart('${item.id}')">Remove</button>
+                    </td>
+                `;
+                total += item.price * item.quantity;
+            });
+
+            // Update total price
+            document.getElementById("totalPrice").textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        // Remove product from cart
+        window.removeFromCart = function (productId) {
+            cart = cart.filter((item) => item.id !== productId);
+            updateCartDisplay();
+        };
+
+        // Place order
+        window.placeOrder = async function () {
+            if (cart.length === 0) {
+                alert("Your cart is empty. Add items to place an order.");
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    // Update sold count for each product in the cart
+                    for (const item of cart) {
+                        const productRef = ref(database, `spareParts/${item.id}`);
+                        const snapshot = await get(productRef);
+                        const product = snapshot.val();
+
+                        if (product) {
+                            const updatedSold = (product.sold || 0) + item.quantity;
+                            await update(productRef, { sold: updatedSold });
+                        }
+                    }
+
+                    // Save the order
+                    const orderRef = ref(database, `users/${user.uid}/orders`);
+                    await push(orderRef, { items: cart, status: "Pending", total: calculateTotal() });
+
+                    alert("Order placed successfully!");
+                    cart = [];
+                    updateCartDisplay();
+                    loadOrders(); // Reload orders after placing a new one
+                    loadSpareParts(); // Reload products to reflect updated sold count
+                } catch (error) {
+                    console.error("Error placing order:", error);
+                    alert("Failed to place order. Please try again.");
+                }
+            } else {
+                alert("You must be logged in to place an order.");
+            }
+        };
+
+        // Calculate total price
+        function calculateTotal() {
+            return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+        }
+
+        // Fetch and display orders
+        function loadOrders() {
+            const user = auth.currentUser;
+            if (user) {
+                const ordersRef = ref(database, `users/${user.uid}/orders`);
+                onValue(ordersRef, (snapshot) => {
+                    const orders = snapshot.val();
+                    if (orders) {
+                        displayOrders(orders);
+                    } else {
+                        console.log("No orders found.");
+                        document.getElementById("ordersTable").getElementsByTagName("tbody")[0].innerHTML =
+                            "<tr><td colspan='3'>No orders found.</td></tr>";
+                    }
+                });
+            } else {
+                console.log("User is not authenticated.");
+                alert("You must be logged in to view your orders.");
+            }
+        }
+
+        // Display orders in the table
+        function displayOrders(orders) {
+            const ordersTable = document.getElementById("ordersTable").getElementsByTagName("tbody")[0];
+            ordersTable.innerHTML = ""; // Clear existing rows
+
+            if (!orders) {
+                ordersTable.innerHTML = "<tr><td colspan='3'>No orders found.</td></tr>";
+                return;
+            }
+
+            Object.keys(orders).forEach((orderId) => {
+                const order = orders[orderId];
+                const total = order.total || 0; // Default to 0 if total is missing or invalid
+
+                const row = ordersTable.insertRow();
+                row.innerHTML = `
+                    <td>${orderId}</td>
+                    <td>${order.status}</td>
+                    <td>
+                        <ul>
+                            ${order.items
+                                .map(
+                                    (item) => `
+                                <li>
+                                    <strong>${item.name}</strong> - 
+                                    Quantity: ${item.quantity}, 
+                                    Price: $${item.price}
+                                </li>
+                            `
+                                )
+                                .join("")}
+                        </ul>
+                        <p><strong>Total: $${total.toFixed(2)}</strong></p>
+                    </td>
+                `;
+            });
+        }
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User is authenticated:", user.email);
+                loadSpareParts();
+                loadOrders(); // Load orders for the authenticated user
+            } else {
+                console.log("User is not authenticated.");
+                // Redirect to login page or show login form
+            }
+        });
+
+        // Expose functions to the global scope
+        window.loadSpareParts = loadSpareParts;
+        window.filterSpareParts = filterSpareParts;
+        window.updateCartDisplay = updateCartDisplay;
+        window.loadOrders = loadOrders;
+    </script>
+
+    <!-- Google Maps API -->
+    <script>
+        let map;
+
+        // Initialize Google Map
+        function initMap() {
+            // Default center: Yanbu, Saudi Arabia
+            const yanbu = { lat: 24.0895, lng: 38.0618 };
+
+            // Initialize the map
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: yanbu,
+                zoom: 12,
+            });
+
+            // Add a marker
+            const marker = new google.maps.Marker({
+                position: yanbu,
+                map: map,
+                title: "Yanbu, Saudi Arabia",
+            });
+        }
+
+        // Load Google Maps API
+        function loadGoogleMaps() {
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap`;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        // Load Google Maps when the Track Order tab is opened
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            if (evt) {
+                evt.currentTarget.className += " active";
+            }
+
+            // Load Google Maps if the Track Order tab is opened
+            if (tabName === "TrackOrder") {
+                loadGoogleMaps();
+            }
+        }
+
+        // Expose openTab to the global scope
+        window.openTab = openTab;
+
+        // Open the Home tab by default
+        openTab(null, "Home");
+    </script>
+</body>
+</html>

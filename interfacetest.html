@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SparePartsDeliverySA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            background-color: #f4f7f9;
+            color: #333;
+            position: relative;
+            padding-right: 350px;
+            transition: padding-right 0.3s ease;
+        }
+
+        /* Container for consistent width */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* Navigation */
+        .navbar {
+            background-color: #0D2538;
+            color: #fff;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar .logo img {
+            height: auto;
+            max-width: 150%;
+            width: 150px;
+        }
+
+        .navbar .brand-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .navbar .nav-links {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .navbar .nav-links a:hover {
+            color: #F9AA33;
+        }
+
+        /* User Info */
+        .user-info-container {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .user-greeting {
+            font-weight: 500;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .user-id {
+            font-size: 0.8rem;
+            color: #F9AA33;
+            font-family: monospace;
+            word-break: break-all;
+            max-width: 200px;
+            text-align: right;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: none;
+            border: 1px solid #F9AA33;
+            color: #F9AA33;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: none;
+            white-space: nowrap;
+        }
+
+        .logout-btn:hover {
+            background-color: #F9AA33;
+            color: #0D2538;
+        }
+
+        /* Login Button */
+        .login-btn {
+            background: none;
+            border: 1px solid #F9AA33;
+            color: #F9AA33;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .login-btn:hover {
+            background-color: #F9AA33;
+            color: #0D2538;
+        }
+
+        /* Cart Icon */
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #F9AA33;
+            color: #0D2538;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Cart Sidebar */
+        .cart-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background-color: #fff;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 99;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            padding: 1.5rem;
+        }
+
+        .cart-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .cart-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-sidebar-header h2 {
+            font-size: 1.5rem;
+            color: #0D2538;
+        }
+
+        .close-cart {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #1B3A4B, #0D2538);
+            color: #fff;
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .hero .hero-content {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Categories */
+        .categories {
+            padding: 4rem 0;
+            background-color: #fff;
+        }
+
+        .categories .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .category {
+            background-color: #f9aa33;
+            color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #0D2538;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Centered Tab Container */
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        /* Tabbed Interface */
+        .tab {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            display: inline-flex;
+        }
+
+        .tab button {
+            background-color: inherit;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: background 0.3s ease;
+            font-size: 16px;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        .tab button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+
+        /* Google Map Container */
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Search Bar */
+        #searchBar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        #searchBar:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        /* Spare Parts Section */
+        .spare-parts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .spare-part {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: 300px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: 500;
+            color: #0D2538;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .spare-part:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .spare-part img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            background-color: #f5f5f5;
+            padding: 10px;
+        }
+
+        .spare-part h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .spare-part p {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .spare-part .btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .spare-part .btn:hover {
+            background-color: #f5f5f5;
+            border-color: #c0c0c0;
+        }
+
+        /* Cart Table */
+        #cartTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        #cartTable th,
+        #cartTable td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #cartTable th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            color: #0D2538;
+        }
+
+        #cartTable td {
+            color: #333;
+        }
+
+        #cartTable .btn {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            background-color: #f5f5f5;
+            color: #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #cartTable .btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        #totalPrice {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #0D2538;
+            margin-top: 1rem;
+        }
+
+        .place-order-btn {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .place-order-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .place-order-btn .spinner {
+            display: none;
+            margin-left: 8px;
+        }
+
+        .place-order-btn.processing .spinner {
+            display: inline-block;
+        }
+
+        .place-order-btn:hover {
+            background-color: #f5f5f5;
+            border-color: #c0c0c0;
+        }
+
+        /* Your Orders Section */
+        #YourOrders {
+            margin-top: 2rem;
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #YourOrders h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #0D2538;
+        }
+
+        #ordersTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        #ordersTable th,
+        #ordersTable td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #ordersTable th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            color: #0D2538;
+        }
+
+        #ordersTable td {
+            color: #333;
+        }
+
+        #ordersTable ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #ordersTable ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        #ordersTable ul li strong {
+            color: #0D2538;
+        }
+
+        /* Track Order Form */
+        .track-order-form {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .track-order-form label {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0D2538;
+        }
+
+        .track-order-form input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        .track-order-form .btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .track-order-form .btn:hover {
+            background-color: #1976D2;
+        }
+
+        /* Order Information */
+        .order-info {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .order-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #0D2538;
+        }
+
+        .order-info p {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .order-info p strong {
+            color: #0D2538;
+        }
+
+        /* Chatbot Styles */
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            z-index: 1000;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .chatbot-toggle {
+            background-color: #0D2538;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+
+        .chatbot-toggle:hover {
+            background-color: #1B3A4B;
+            transform: scale(1.1);
+        }
+
+        .chatbot-window {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            height: 500px;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-window.active {
+            display: flex;
+        }
+
+        .chatbot-header {
+            background-color: #0D2538;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .chatbot-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            background-color: #e5e5ea;
+            color: black;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #0D2538;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+            margin-left: auto;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: white;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chatbot-input button {
+            background-color: #0D2538;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chatbot-input button:hover {
+            background-color: #1B3A4B;
+        }
+
+        .typing-indicator {
+            display: flex;
+            padding: 10px 15px;
+            background-color: #e5e5ea;
+            border-radius: 18px;
+            align-self: flex-start;
+            margin-bottom: 15px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            body {
+                padding-right: 0;
+            }
+            
+            .cart-sidebar {
+                width: 300px;
+            }
+
+            .chatbot-container {
+                width: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar .brand-name {
+                font-size: 1.4rem;
+            }
+            
+            .navbar .logo img {
+                width: 100px;
+            }
+            
+            #cartTable th,
+            #cartTable td,
+            #ordersTable th,
+            #ordersTable td {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+
+            #YourOrders h2 {
+                font-size: 1.5rem;
+            }
+
+            .place-order-btn,
+            #cartTable .btn {
+                font-size: 0.9rem;
+            }
+
+            .track-order-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .track-order-form .btn {
+                width: 100%;
+            }
+            
+            .spare-part {
+                width: 100%;
+            }
+
+            .user-info-container {
+                display: none;
+            }
+
+            .login-btn span {
+                display: none;
+            }
+            
+            .login-btn {
+                padding: 0.5rem;
+            }
+            
+            .login-btn i {
+                margin-right: 0;
+            }
+
+            .chatbot-container {
+                width: 280px;
+                right: 10px;
+                bottom: 10px;
+            }
+
+            .chatbot-window {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar with Brand Name -->
+    <nav class="navbar">
+        <div class="container">
+            <!-- Logo and Brand Name -->
+            <div class="logo-container">
+                <div class="logo">
+                    <img src="img/logo.png" alt="" width="150">
+                </div>
+                <div class="brand-name">SparePartsDeliverySA</div>
+            </div>
+            <!-- Nav Links with User Info and Cart Icon -->
+            <ul class="nav-links">
+                <li>
+                    <div class="user-info-container">
+                        <div class="user-info" id="userInfo">
+                            <span class="user-greeting" id="userGreeting">Hi, Guest</span>
+                            <span class="user-id" id="userId">ID: Not logged in</span>
+                        </div>
+                        <button class="logout-btn" id="logoutBtn" onclick="logout()">Logout</button>
+                    </div>
+                </li>
+                <!-- Login/Register Button -->
+                <li>
+                    <button class="login-btn" id="loginBtn" onclick="window.location.href='loginandreg.html'">
+                        <i class="fas fa-sign-in-alt"></i> <span>Login/Register</span>
+                    </button>
+                </li>
+                <li>
+                    <div class="cart-icon" onclick="toggleCart()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count" id="cartCount">0</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-sidebar-header">
+            <h2>Your Cart</h2>
+            <button class="close-cart" onclick="toggleCart()">&times;</button>
+        </div>
+        <table class="table" id="cartTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="totalPrice">Total: $0.00</div>
+        <button class="place-order-btn" onclick="placeOrder()">
+            Place Order
+            <span class="spinner"><i class="fas fa-spinner fa-spin"></i></span>
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Find the Best Spare Parts for Your Car</h2>
+            <p>🚘 Quality parts for all car models, delivered fast!</p>
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories">
+        <div class="container">
+            <div class="category">
+                <div class="category-icon"><i class="fas fa-oil-can"></i></div>
+                <div class="category-text">Engines</div>
+            </div>
+            <div class="category">
+                <div class="category-icon"><i class="fas fa-wrench"></i></div>
+                <div class="category-text">Brakes</div>
+            </div>
+            <div class="category">
+                <div class="category-icon"><i class="fas fa-tire"></i></div>
+                <div class="category-text">Tires</div>
+            </div>
+            <div class="category">
+                <div class="category-icon"><i class="fas fa-battery-full"></i></div>
+                <div class="category-text">Batteries</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Dashboard -->
+    <div class="container">
+        <!-- Centered Tabbed Interface -->
+        <div class="tab-container">
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'Home')">Home</button>
+                <button class="tablinks" onclick="openTab(event, 'YourOrders')">Your Orders</button>
+                <button class="tablinks" onclick="openTab(event, 'TrackOrder')">Track Order</button>
+            </div>
+        </div>
+
+        <!-- Home Tab -->
+        <div id="Home" class="tabcontent">
+            <h2>Home</h2>
+            <!-- Search Bar -->
+            <input type="text" id="searchBar" placeholder="Search for spare parts..." oninput="filterSpareParts()">
+            <div class="spare-parts" id="spareParts"></div>
+        </div>
+
+        <!-- Your Orders Tab -->
+        <div id="YourOrders" class="tabcontent">
+            <h2>Your Orders</h2>
+            <table class="table" id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Track Order Tab -->
+        <div id="TrackOrder" class="tabcontent">
+            <h2>Track Order</h2>
+            <!-- Order ID Input Form -->
+            <div class="track-order-form">
+                <label for="orderIdInput">Enter Order ID:</label>
+                <input type="text" id="orderIdInput" placeholder="Order ID">
+                <button class="btn" onclick="trackOrder()">Track Order</button>
+            </div>
+
+            <!-- Driver and Order Information -->
+            <div id="orderInfo" class="order-info">
+                <h3>Order Information</h3>
+                <p><strong>Order ID:</strong> <span id="orderId"></span></p>
+                <p><strong>Status:</strong> <span id="orderStatus"></span></p>
+                <p><strong>Driver Name:</strong> <span id="driverName"></span></p>
+                <p><strong>Driver Contact:</strong> <span id="driverContact"></span></p>
+                <p><strong>Estimated Delivery Time:</strong> <span id="deliveryTime"></span></p>
+            </div>
+
+            <!-- Google Map Container -->
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 SparePartsDeliverySA. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Chatbot Container -->
+    <div class="chatbot-container">
+        <button class="chatbot-toggle" id="chatbotToggle">
+            <i class="fas fa-robot"></i>
+        </button>
+        <div class="chatbot-window" id="chatbotWindow">
+            <div class="chatbot-header">
+                <h3>SpareParts Assistant</h3>
+                <button class="chatbot-close" id="chatbotClose">&times;</button>
+            </div>
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="message bot-message">
+                    Hello! I'm your SpareParts assistant. How can I help you today?
+                </div>
+                <div class="message bot-message">
+                    Here are some things I can help with:<br>
+                    - Finding spare parts<br>
+                    - Checking order status<br>
+                    - Answering questions about delivery<br>
+                    - Providing product information
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbotInput" placeholder="Type your message here...">
+                <button id="chatbotSend"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2-eh6sLvD9iUd6vXcznB7MjhdZjdrY5w",
+            authDomain: "parts-a51c8.firebaseapp.com",
+            databaseURL: "https://parts-a51c8-default-rtdb.firebaseio.com/",
+            projectId: "parts-a51c8",
+            storageBucket: "parts-a51c8.appspot.com",
+            messagingSenderId: "503866486340",
+            appId: "1:503866486340:web:fcc777e98414973ea55611"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Global variables
+        let cart = [];
+        let sparePartsData = {};
+        let isPlacingOrder = false;
+
+        // Update user info display
+        function updateUserInfo(user) {
+            const greetingElement = document.getElementById('userGreeting');
+            const userIdElement = document.getElementById('userId');
+            const userInfoElement = document.getElementById('userInfo');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (user) {
+                const usersRef = ref(database, `usersID/${user.uid}`);
+                get(usersRef).then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        if (userData.username) {
+                            greetingElement.textContent = `Hi, ${userData.username}`;
+                        } else if (userData.email) {
+                            greetingElement.textContent = `Hi, ${userData.email.split('@')[0]}`;
+                        } else {
+                            greetingElement.textContent = `Hi, User`;
+                        }
+                        
+                        userIdElement.textContent = `ID: ${user.uid}`;
+                    } else {
+                        greetingElement.textContent = `Hi, ${user.email.split('@')[0]}`;
+                        userIdElement.textContent = `ID: ${user.uid}`;
+                    }
+                    userInfoElement.style.display = 'flex';
+                    logoutBtn.style.display = 'block';
+                    if (loginBtn) loginBtn.style.display = 'none';
+                }).catch((error) => {
+                    console.error("Error fetching user data:", error);
+                    greetingElement.textContent = `Hi, ${user.email.split('@')[0]}`;
+                    userIdElement.textContent = `ID: ${user.uid}`;
+                    userInfoElement.style.display = 'flex';
+                    logoutBtn.style.display = 'block';
+                    if (loginBtn) loginBtn.style.display = 'none';
+                });
+            } else {
+                greetingElement.textContent = 'Hi, Guest';
+                userIdElement.textContent = 'ID: Not logged in';
+                userInfoElement.style.display = 'flex';
+                logoutBtn.style.display = 'none';
+                if (loginBtn) loginBtn.style.display = 'flex';
+            }
+        }
+
+        // Logout function
+        window.logout = function() {
+            signOut(auth).then(() => {
+                console.log("User signed out");
+                cart = [];
+                updateCartDisplay();
+                updateCartCount();
+                updateUserInfo(null);
+            }).catch((error) => {
+                console.error("Error signing out:", error);
+                alert("Error signing out. Please try again.");
+            });
+        };
+
+        // Toggle cart sidebar
+        function toggleCart() {
+            const cartSidebar = document.getElementById('cartSidebar');
+            cartSidebar.classList.toggle('active');
+            document.body.style.paddingRight = cartSidebar.classList.contains('active') ? '350px' : '0';
+        }
+
+        // Update cart count display
+        function updateCartCount() {
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            document.getElementById('cartCount').textContent = totalItems;
+        }
+
+        // Load spare parts from Firebase
+        function loadSpareParts() {
+            const sparePartsRef = ref(database, "spareParts");
+            onValue(sparePartsRef, (snapshot) => {
+                sparePartsData = snapshot.val();
+                filterSpareParts();
+            });
+        }
+
+        // Filter spare parts based on search input
+        function filterSpareParts() {
+            const searchQuery = document.getElementById("searchBar").value.toLowerCase();
+            const sparePartsContainer = document.getElementById("spareParts");
+            sparePartsContainer.innerHTML = "";
+
+            for (const key in sparePartsData) {
+                const part = sparePartsData[key];
+                if (part.name.toLowerCase().includes(searchQuery)) {
+                    const imageUrl = part.imageUrl || "img/1.png";
+                    const partHTML = `
+                        <div class="spare-part">
+                            <img src="${imageUrl}" alt="${part.name}" style="max-height: 200px; object-fit: contain;">
+                            <h3>${part.name}</h3>
+                            <p>Price: $${part.price}</p>
+                            <p>Stock: ${part.stock}</p>
+                            <p>Sold: ${part.sold || 0}</p>
+                            <button class="btn" onclick="addToCart('${key}')">Add to Cart</button>
+                        </div>
+                    `;
+                    sparePartsContainer.innerHTML += partHTML;
+                }
+            }
+        }
+
+        // Add product to cart
+        window.addToCart = function (productId) {
+            const productsRef = ref(database, `spareParts/${productId}`);
+            onValue(productsRef, (snapshot) => {
+                const product = snapshot.val();
+                if (!product) {
+                    console.error("Product not found in database.");
+                    return;
+                }
+
+                const existingItem = cart.find((item) => item.id === productId);
+
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({ ...product, id: productId, quantity: 1 });
+                }
+
+                updateCartDisplay();
+                updateCartCount();
+                document.getElementById('cartSidebar').classList.add('active');
+                document.body.style.paddingRight = '350px';
+            });
+        };
+
+        // Update cart display
+        function updateCartDisplay() {
+            const cartTable = document.getElementById("cartTable").getElementsByTagName("tbody")[0];
+            cartTable.innerHTML = "";
+
+            let total = 0;
+
+            cart.forEach((item) => {
+                const row = cartTable.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.price * item.quantity}</td>
+                    <td>
+                        <button class="btn" onclick="removeFromCart('${item.id}')">Remove</button>
+                    </td>
+                `;
+                total += item.price * item.quantity;
+            });
+
+            document.getElementById("totalPrice").textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        // Remove product from cart
+        window.removeFromCart = function (productId) {
+            cart = cart.filter((item) => item.id !== productId);
+            updateCartDisplay();
+            updateCartCount();
+        };
+
+        // Place order - fixed to prevent duplicate orders
+        window.placeOrder = async function () {
+            if (isPlacingOrder) return;
+            isPlacingOrder = true;
+            
+            const placeOrderBtn = document.querySelector('.place-order-btn');
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.classList.add('processing');
+
+            if (cart.length === 0) {
+                alert("Your cart is empty. Add items to place an order.");
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.classList.remove('processing');
+                isPlacingOrder = false;
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    // Create a copy of the cart to prevent modifications during processing
+                    const cartCopy = JSON.parse(JSON.stringify(cart));
+                    
+                    // Update sold count for each product
+                    const updatePromises = cartCopy.map(item => {
+                        const productRef = ref(database, `spareParts/${item.id}`);
+                        return get(productRef).then(snapshot => {
+                            const product = snapshot.val();
+                            if (product) {
+                                const updatedSold = (product.sold || 0) + item.quantity;
+                                return update(productRef, { sold: updatedSold });
+                            }
+                        });
+                    });
+
+                    await Promise.all(updatePromises);
+
+                    // Save the order
+                    const orderRef = ref(database, `users/${user.uid}/orders`);
+                    await push(orderRef, { 
+                        items: cartCopy,
+                        status: "Pending", 
+                        total: calculateTotal(),
+                        timestamp: Date.now()
+                    });
+
+                    alert("Order placed successfully!");
+                    cart = [];
+                    updateCartDisplay();
+                    updateCartCount();
+                    loadOrders();
+                    loadSpareParts();
+                    toggleCart();
+                } catch (error) {
+                    console.error("Error placing order:", error);
+                    alert("Failed to place order. Please try again.");
+                } finally {
+                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.classList.remove('processing');
+                    isPlacingOrder = false;
+                }
+            } else {
+                alert("You must be logged in to place an order.");
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.classList.remove('processing');
+                isPlacingOrder = false;
+            }
+        };
+
+        // Calculate total price
+        function calculateTotal() {
+            return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+        }
+
+        // Fetch and display orders
+        function loadOrders() {
+            const user = auth.currentUser;
+            if (user) {
+                const ordersRef = ref(database, `users/${user.uid}/orders`);
+                onValue(ordersRef, (snapshot) => {
+                    const orders = snapshot.val();
+                    if (orders) {
+                        displayOrders(orders);
+                    } else {
+                        console.log("No orders found.");
+                        document.getElementById("ordersTable").getElementsByTagName("tbody")[0].innerHTML =
+                            "<tr><td colspan='3'>No orders found.</td></tr>";
+                    }
+                });
+            } else {
+                console.log("User is not authenticated.");
+                alert("You must be logged in to view your orders.");
+            }
+        }
+
+        // Display orders in the table
+        function displayOrders(orders) {
+            const ordersTable = document.getElementById("ordersTable").getElementsByTagName("tbody")[0];
+            ordersTable.innerHTML = "";
+
+            if (!orders) {
+                ordersTable.innerHTML = "<tr><td colspan='3'>No orders found.</td></tr>";
+                return;
+            }
+
+            // Convert to array and sort by timestamp (newest first)
+            const sortedOrders = Object.entries(orders)
+                .map(([orderId, order]) => ({ orderId, ...order }))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            sortedOrders.forEach(order => {
+                const total = order.total || 0;
+                const row = ordersTable.insertRow();
+                row.innerHTML = `
+                    <td>${order.orderId}</td>
+                    <td>${order.status}</td>
+                    <td>
+                        <ul>
+                            ${order.items
+                                .map(
+                                    item => `
+                                <li>
+                                    <strong>${item.name}</strong> - 
+                                    Quantity: ${item.quantity}, 
+                                    Price: $${item.price}
+                                </li>
+                            `
+                                )
+                                .join("")}
+                        </ul>
+                        <p><strong>Total: $${total.toFixed(2)}</strong></p>
+                    </td>
+                `;
+            });
+        }
+
+        // Track Order Function
+        window.trackOrder = function () {
+            const orderId = document.getElementById("orderIdInput").value.trim();
+            if (!orderId) {
+                alert("Please enter a valid Order ID.");
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (user) {
+                const orderRef = ref(database, `users/${user.uid}/orders/${orderId}`);
+                onValue(orderRef, (snapshot) => {
+                    const order = snapshot.val();
+                    if (order) {
+                        document.getElementById("orderId").textContent = orderId;
+                        document.getElementById("orderStatus").textContent = order.status || "Pending";
+                        document.getElementById("driverName").textContent = order.driver?.name || "Not Assigned";
+                        document.getElementById("driverContact").textContent = order.driver?.contact || "N/A";
+                        document.getElementById("deliveryTime").textContent = order.deliveryTime || "N/A";
+
+                        document.getElementById("orderInfo").style.display = "block";
+
+                        if (order.driver?.location) {
+                            updateMap(order.driver.location);
+                        }
+                    } else {
+                        alert("Order not found. Please check the Order ID.");
+                        document.getElementById("orderInfo").style.display = "none";
+                    }
+                });
+            } else {
+                alert("You must be logged in to track an order.");
+            }
+        };
+
+        // Update Google Map with Driver's Location
+        function updateMap(location) {
+            const map = new google.maps.Map(document.getElementById("map"), {
+                center: location,
+                zoom: 12,
+            });
+
+            new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Driver Location",
+            });
+        }
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User is authenticated:", user.email);
+                updateUserInfo(user);
+                loadSpareParts();
+                loadOrders();
+            } else {
+                console.log("User is not authenticated.");
+                updateUserInfo(null);
+            }
+        });
+
+        // Google Maps API
+        let map;
+
+        // Initialize Google Map
+        function initMap() {
+            const yanbu = { lat: 24.0895, lng: 38.0618 };
+
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: yanbu,
+                zoom: 12,
+            });
+
+            const marker = new google.maps.Marker({
+                position: yanbu,
+                map: map,
+                title: "Yanbu, Saudi Arabia",
+            });
+        }
+
+        // Load Google Maps API
+        function loadGoogleMaps() {
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap`;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        // Tab functionality
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            if (evt) {
+                evt.currentTarget.className += " active";
+            }
+
+            if (tabName === "TrackOrder") {
+                loadGoogleMaps();
+            }
+        }
+
+        // Chatbot functionality
+        function setupChatbot() {
+            const chatbotToggle = document.getElementById('chatbotToggle');
+            const chatbotWindow = document.getElementById('chatbotWindow');
+            const chatbotClose = document.getElementById('chatbotClose');
+            const chatbotMessages = document.getElementById('chatbotMessages');
+            const chatbotInput = document.getElementById('chatbotInput');
+            const chatbotSend = document.getElementById('chatbotSend');
+
+            // Toggle chatbot window
+            chatbotToggle.addEventListener('click', () => {
+                chatbotWindow.classList.toggle('active');
+            });
+
+            // Close chatbot window
+            chatbotClose.addEventListener('click', () => {
+                chatbotWindow.classList.remove('active');
+            });
+
+            // Send message when button is clicked
+            chatbotSend.addEventListener('click', sendMessage);
+
+            // Send message when Enter key is pressed
+            chatbotInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                const message = chatbotInput.value.trim();
+                if (message) {
+                    // Add user message to chat
+                    addMessage(message, 'user');
+                    chatbotInput.value = '';
+
+                    // Show typing indicator
+                    const typingIndicator = document.createElement('div');
+                    typingIndicator.className = 'typing-indicator';
+                    typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+                    chatbotMessages.appendChild(typingIndicator);
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+                    // Process message and generate response
+                    setTimeout(() => {
+                        // Remove typing indicator
+                        chatbotMessages.removeChild(typingIndicator);
+                        
+                        // Generate bot response
+                        const response = generateResponse(message);
+                        addMessage(response, 'bot');
+                    }, 1000 + Math.random() * 2000); // Random delay for more natural feel
+                }
+            }
+
+            function addMessage(text, sender) {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${sender}-message`;
+                messageElement.textContent = text;
+                chatbotMessages.appendChild(messageElement);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            function generateResponse(userMessage) {
+                const lowerMessage = userMessage.toLowerCase();
+                
+                // Greetings
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+                    return "Hello! How can I assist you with your spare parts needs today?";
+                }
+                
+                // Order status
+                if (lowerMessage.includes('status') || lowerMessage.includes('track') || lowerMessage.includes('order')) {
+                    return "To check your order status, please go to the 'Track Order' tab and enter your order ID. You can also ask me about specific orders if you provide the order ID.";
+                }
+                
+                // Delivery questions
+                if (lowerMessage.includes('delivery') || lowerMessage.includes('ship') || lowerMessage.includes('arrive')) {
+                    return "Our standard delivery time is 2-3 business days. For more specific delivery information, please provide your order ID.";
+                }
+                
+                // Product questions
+                if (lowerMessage.includes('product') || lowerMessage.includes('part') || lowerMessage.includes('item')) {
+                    return "You can browse all our spare parts in the 'Home' tab. Use the search bar to find specific items. Let me know if you're looking for something particular!";
+                }
+                
+                // Cart questions
+                if (lowerMessage.includes('cart') || lowerMessage.includes('basket') || lowerMessage.includes('purchase')) {
+                    return "You can view your cart by clicking the shopping cart icon in the top right corner. From there you can review items and place your order.";
+                }
+                
+                // Help
+                if (lowerMessage.includes('help') || lowerMessage.includes('support') || lowerMessage.includes('assist')) {
+                    return "I can help you with:\n- Finding spare parts\n- Checking order status\n- Answering delivery questions\n- Providing product information\n\nWhat do you need help with?";
+                }
+                
+                // Default response
+                const defaultResponses = [
+                    "I'm not sure I understand. Could you rephrase that?",
+                    "I'm here to help with spare parts questions. Could you be more specific?",
+                    "I specialize in spare parts information. How can I assist you with your order or products?",
+                    "For detailed assistance, please provide more details about your question."
+                ];
+                
+                return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+            }
+        }
+
+        // Expose functions to the global scope
+        window.loadSpareParts = loadSpareParts;
+        window.filterSpareParts = filterSpareParts;
+        window.updateCartDisplay = updateCartDisplay;
+        window.loadOrders = loadOrders;
+        window.openTab = openTab;
+        window.toggleCart = toggleCart;
+
+        // Initialize chatbot when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            setupChatbot();
+        });
+
+        // Open the Home tab by default
+        openTab(null, "Home");
+    </script>
+</body>
+</html>

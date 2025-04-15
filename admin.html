@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SparePartsDeliverySA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D2538;
+            --secondary-color: #F9AA33;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            color: var(--dark-color);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background-color: var(--primary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            width: 250px;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-header img {
+            height: 100px;
+            margin-right: 10px;
+        }
+
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .sidebar-menu li:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-menu li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+
+        .sidebar-menu li i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-menu li.active {
+            background-color: var(--secondary-color);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .header {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 5px 5px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 500;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            table-layout: fixed;
+        }
+
+        .table th, .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        /* Full text display */
+        .full-text {
+            white-space: normal !important;
+            max-width: 300px;
+        }
+
+        /* Status Badges */
+        .badge {
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .badge-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-shipped {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .badge-delivered {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 15px;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+
+        /* Compact charts */
+        .compact-chart {
+            height: 250px !important;
+            width: 100% !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .table {
+                font-size: 0.9rem;
+            }
+            .table th, .table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="img/logo.png" alt="Company Logo">
+            <h3>Admin Panel</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active" data-target="dashboard">
+                <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li data-target="orders">
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+            </li>
+            <li data-target="drivers">
+                <a href="#"><i class="fas fa-truck"></i> Drivers</a>
+            </li>
+            <li data-target="parts">
+                <a href="#"><i class="fas fa-box"></i> Spare Parts</a>
+            </li>
+            <li data-target="reports">
+                <a href="#"><i class="fas fa-chart-bar"></i> Reports</a>
+            </li>
+            <li>
+                <a href="#" onclick="window.signOut()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h4 id="pageTitle">Dashboard</h4>
+            <div class="user-info">
+                <span id="adminName">Admin User</span>
+                <i class="fas fa-user-circle ms-2"></i>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content" class="content-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-shopping-cart text-primary"></i> Total Orders</h5>
+                            <h3 id="totalOrders">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-truck text-warning"></i> Active Drivers</h5>
+                            <h3 id="activeDrivers">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-cogs text-success"></i> Spare Parts</h5>
+                            <h3 id="totalParts">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-dollar-sign text-info"></i> Today's Revenue</h5>
+                            <h3 id="todayRevenue">$0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line"></i> Recent Orders</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 20%">Order ID</th>
+                                            <th style="width: 25%">Customer</th>
+                                            <th style="width: 20%">Date</th>
+                                            <th style="width: 15%">Amount</th>
+                                            <th style="width: 20%">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentOrders">
+                                        <!-- Recent orders will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-exclamation-circle"></i> Low Stock Items</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 70%">Part Name</th>
+                                            <th style="width: 30%">Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lowStockItems">
+                                        <!-- Low stock items will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Management Content -->
+        <div id="orders-content" class="content-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-shopping-cart"></i> Order Management</h5>
+                        <div>
+                            <select id="orderFilter" class="form-select form-select-sm" style="width: 150px;">
+                                <option value="all">All Orders</option>
+                                <option value="pending">Pending</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Order ID</th>
+                                    <th style="width: 20%">Customer</th>
+                                    <th style="width: 15%">Date</th>
+                                    <th style="width: 10%">Items</th>
+                                    <th style="width: 10%">Amount</th>
+                                    <th style="width: 15%">Status</th>
+                                    <th style="width: 15%">Driver</th>
+                                    <th style="width: 10%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allOrders">
+                                <!-- All orders will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drivers Management Content -->
+        <div id="drivers-content" class="content-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-truck"></i> Driver Management</h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDriverModal">
+                            <i class="fas fa-plus"></i> Add Driver
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">ID</th>
+                                    <th style="width: 20%">Name</th>
+                                    <th style="width: 15%">License</th>
+                                    <th style="width: 15%">Vehicle</th>
+                                    <th style="width: 15%">Assigned Orders</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 10%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="driversList">
+                                <!-- Drivers will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spare Parts Management Content -->
+        <div id="parts-content" class="content-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-cogs"></i> Spare Parts Management</h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPartModal">
+                            <i class="fas fa-plus"></i> Add Part
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">ID</th>
+                                    <th style="width: 25%">Part Name</th>
+                                    <th style="width: 15%">Image</th>
+                                    <th style="width: 10%">Price</th>
+                                    <th style="width: 10%">Stock</th>
+                                    <th style="width: 10%">Sold</th>
+                                    <th style="width: 15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partsList">
+                                <!-- Spare parts will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Content -->
+        <div id="reports-content" class="content-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6>Sales Overview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="salesChart" class="compact-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6>Top Selling Parts</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topPartsChart" class="compact-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6>Order Status</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="statusChart" class="compact-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6>Driver Performance</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="driverChart" class="compact-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Order Information</h6>
+                            <p><strong>Order ID:</strong> <span id="modalOrderId"></span></p>
+                            <p><strong>Date:</strong> <span id="modalOrderDate"></span></p>
+                            <p><strong>Status:</strong> <span id="modalOrderStatus" class="badge"></span></p>
+                            <p><strong>Total:</strong> $<span id="modalOrderTotal"></span></p>
+                            <p><strong>Driver:</strong> <span id="modalOrderDriver"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Customer Information</h6>
+                            <p><strong>Name:</strong> <span id="modalCustomerName"></span></p>
+                            <p><strong>Phone:</strong> <span id="modalCustomerPhone"></span></p>
+                            <p><strong>Address:</strong> <span id="modalCustomerAddress"></span></p>
+                        </div>
+                    </div>
+                    
+                    <h6>Order Items</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalOrderItems">
+                                <!-- Order items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label for="updateStatus" class="form-label">Update Status</label>
+                        <select id="updateStatus" class="form-select">
+                            <option value="Pending">Pending</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="window.updateOrderStatus()">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Driver Modal -->
+    <div class="modal fade" id="addDriverModal" tabindex="-1" aria-labelledby="addDriverModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDriverModalLabel">Add New Driver</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="driverForm">
+                        <div class="mb-3">
+                            <label for="driverName" class="form-label">Driver Name</label>
+                            <input type="text" class="form-control" id="driverName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="driverLicense" class="form-label">License Number</label>
+                            <input type="text" class="form-control" id="driverLicense" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="driverVehicle" class="form-label">Vehicle Type</label>
+                            <select class="form-select" id="driverVehicle" required>
+                                <option value="car">Car</option>
+                                <option value="truck">Truck</option>
+                                <option value="motorcycle">Motorcycle</option>
+                                <option value="van">Van</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="driverImage" class="form-label">Image URL (optional)</label>
+                            <input type="text" class="form-control" id="driverImage">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="window.addNewDriver()">Add Driver</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Part Modal -->
+    <div class="modal fade" id="addPartModal" tabindex="-1" aria-labelledby="addPartModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPartModalLabel">Add New Spare Part</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="partForm">
+                        <div class="mb-3">
+                            <label for="partName" class="form-label">Part Name</label>
+                            <input type="text" class="form-control" id="partName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="partPrice" class="form-label">Price</label>
+                            <input type="number" step="0.01" class="form-control" id="partPrice" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="partStock" class="form-label">Initial Stock</label>
+                            <input type="number" class="form-control" id="partStock" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="partImage" class="form-label">Image URL (optional)</label>
+                            <input type="text" class="form-control" id="partImage">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="window.addNewPart()">Add Part</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK and Bootstrap JS -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="module">
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2-eh6sLvD9iUd6vXcznB7MjhdZjdrY5w",
+            authDomain: "parts-a51c8.firebaseapp.com",
+            databaseURL: "https://parts-a51c8-default-rtdb.firebaseio.com",
+            projectId: "parts-a51c8",
+            storageBucket: "parts-a51c8.appspot.com",
+            messagingSenderId: "503866486340",
+            appId: "1:503866486340:web:fcc777e98414973ea55611"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // Global variables
+        let currentAdminId = null;
+        let selectedOrder = null;
+        let salesChart = null;
+        let topPartsChart = null;
+        let statusChart = null;
+        let driverChart = null;
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // For demo purposes, we'll skip authentication
+            currentAdminId = "admin-user-id";
+            document.getElementById('adminName').textContent = "Admin User";
+            
+            // Initialize sidebar navigation
+            setupSidebar();
+            
+            // Load initial data
+            loadDashboardData();
+            loadAllOrders();
+            loadDrivers();
+            loadSpareParts();
+        });
+
+        // Setup sidebar navigation
+        function setupSidebar() {
+            const menuItems = document.querySelectorAll('.sidebar-menu li');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Get target content section
+                    const target = this.getAttribute('data-target');
+                    
+                    // Hide all content sections
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // Show target content section
+                    document.getElementById(`${target}-content`).style.display = 'block';
+                    
+                    // Update page title
+                    document.getElementById('pageTitle').textContent = this.textContent.trim();
+                    
+                    // Load specific data if needed
+                    if (target === 'reports') {
+                        loadReports();
+                    }
+                });
+            });
+        }
+
+        // Load dashboard data
+        function loadDashboardData() {
+            // Load total orders count
+            database.ref('users').once('value').then(snapshot => {
+                let totalOrders = 0;
+                snapshot.forEach(userSnapshot => {
+                    const orders = userSnapshot.child('orders').val();
+                    if (orders) {
+                        totalOrders += Object.keys(orders).length;
+                    }
+                });
+                document.getElementById('totalOrders').textContent = totalOrders;
+            });
+            
+            // Load active drivers count
+            database.ref('drivers').once('value').then(snapshot => {
+                const drivers = snapshot.val();
+                const count = drivers ? Object.keys(drivers).length : 0;
+                document.getElementById('activeDrivers').textContent = count;
+            });
+            
+            // Load total parts count
+            database.ref('spareParts').once('value').then(snapshot => {
+                const parts = snapshot.val();
+                const count = parts ? Object.keys(parts).length : 0;
+                document.getElementById('totalParts').textContent = count;
+            });
+            
+            // Load today's revenue (simplified)
+            database.ref('users').once('value').then(snapshot => {
+                let revenue = 0;
+                const today = new Date().toISOString().split('T')[0];
+                
+                snapshot.forEach(userSnapshot => {
+                    const orders = userSnapshot.child('orders').val();
+                    if (orders) {
+                        Object.values(orders).forEach(order => {
+                            if (order.timestamp && order.timestamp.includes(today)) {
+                                revenue += order.total || 0;
+                            }
+                        });
+                    }
+                });
+                
+                document.getElementById('todayRevenue').textContent = `$${revenue.toFixed(2)}`;
+            });
+            
+            // Load recent orders
+            database.ref('users').once('value').then(snapshot => {
+                const recentOrders = [];
+                
+                snapshot.forEach(userSnapshot => {
+                    const userId = userSnapshot.key;
+                    const userData = userSnapshot.child('userData').val() || {};
+                    const orders = userSnapshot.child('orders').val();
+                    
+                    if (orders) {
+                        Object.entries(orders).forEach(([orderId, order]) => {
+                            recentOrders.push({
+                                orderId,
+                                userId,
+                                customer: userData.username || 'Unknown',
+                                date: order.timestamp || 'N/A',
+                                amount: order.total || 0,
+                                status: order.status || 'Pending'
+                            });
+                        });
+                    }
+                });
+                
+                // Sort by date (newest first)
+                recentOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Display up to 5 recent orders
+                const recentOrdersTable = document.getElementById('recentOrders');
+                recentOrdersTable.innerHTML = '';
+                
+                recentOrders.slice(0, 5).forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="full-text">${order.orderId}</td>
+                        <td class="full-text">${order.customer}</td>
+                        <td>${order.date ? new Date(order.date).toLocaleDateString() : 'N/A'}</td>
+                        <td>$${order.amount.toFixed(2)}</td>
+                        <td><span class="badge badge-${order.status.toLowerCase()}">${order.status}</span></td>
+                    `;
+                    recentOrdersTable.appendChild(row);
+                });
+            });
+            
+            // Load low stock items
+            database.ref('spareParts').once('value').then(snapshot => {
+                const parts = snapshot.val();
+                const lowStockItems = [];
+                
+                if (parts) {
+                    Object.entries(parts).forEach(([id, part]) => {
+                        if (parseInt(part.stock) < 10) { // Threshold for low stock
+                            lowStockItems.push({
+                                id,
+                                name: part.name,
+                                stock: part.stock
+                            });
+                        }
+                    });
+                }
+                
+                // Display low stock items
+                const lowStockTable = document.getElementById('lowStockItems');
+                lowStockTable.innerHTML = '';
+                
+                if (lowStockItems.length > 0) {
+                    lowStockItems.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="full-text">${item.name}</td>
+                            <td class="${item.stock < 5 ? 'text-danger' : 'text-warning'}">${item.stock}</td>
+                        `;
+                        lowStockTable.appendChild(row);
+                    });
+                } else {
+                    lowStockTable.innerHTML = '<tr><td colspan="2" class="text-center text-muted">No low stock items</td></tr>';
+                }
+            });
+        }
+
+        // Load all orders with filtering
+        function loadAllOrders() {
+            const filter = document.getElementById('orderFilter').value;
+            database.ref('users').once('value').then(snapshot => {
+                const allOrders = [];
+                
+                snapshot.forEach(userSnapshot => {
+                    const userId = userSnapshot.key;
+                    const userData = userSnapshot.child('userData').val() || {};
+                    const orders = userSnapshot.child('orders').val();
+                    
+                    if (orders) {
+                        Object.entries(orders).forEach(([orderId, order]) => {
+                            // Apply filter
+                            if (filter === 'all' || 
+                                (filter === 'pending' && order.status === 'Pending') ||
+                                (filter === 'shipped' && order.status === 'Shipped') ||
+                                (filter === 'delivered' && order.status === 'Delivered') ||
+                                (filter === 'cancelled' && order.status === 'Cancelled')) {
+                                
+                                // Count items
+                                const itemCount = order.items ? order.items.length : 0;
+                                
+                                allOrders.push({
+                                    orderId,
+                                    userId,
+                                    customer: userData.username || 'Unknown',
+                                    date: order.timestamp || 'N/A',
+                                    items: itemCount,
+                                    amount: order.total || 0,
+                                    status: order.status || 'Pending',
+                                    driver: order.driver || 'Not assigned'
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                // Sort by date (newest first)
+                allOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Display all filtered orders
+                const ordersTable = document.getElementById('allOrders');
+                ordersTable.innerHTML = '';
+                
+                if (allOrders.length > 0) {
+                    allOrders.forEach(order => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="full-text">${order.orderId}</td>
+                            <td class="full-text">${order.customer}</td>
+                            <td>${order.date ? new Date(order.date).toLocaleDateString() : 'N/A'}</td>
+                            <td>${order.items}</td>
+                            <td>$${order.amount.toFixed(2)}</td>
+                            <td><span class="badge badge-${order.status.toLowerCase()}">${order.status}</span></td>
+                            <td class="full-text">${order.driver}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetailsModal('${order.userId}', '${order.orderId}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        `;
+                        ordersTable.appendChild(row);
+                    });
+                } else {
+                    ordersTable.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No orders found</td></tr>';
+                }
+            });
+        }
+
+        // Load all drivers
+        function loadDrivers() {
+            database.ref('drivers').once('value').then(snapshot => {
+                const drivers = snapshot.val();
+                const driversTable = document.getElementById('driversList');
+                driversTable.innerHTML = '';
+                
+                if (drivers) {
+                    Object.entries(drivers).forEach(([id, driver]) => {
+                        // Count assigned orders (simplified)
+                        let assignedOrders = 0;
+                        database.ref('users').once('value').then(userSnapshot => {
+                            userSnapshot.forEach(user => {
+                                const orders = user.child('orders').val();
+                                if (orders) {
+                                    Object.values(orders).forEach(order => {
+                                        if (order.driverId === id) {
+                                            assignedOrders++;
+                                        }
+                                    });
+                                }
+                            });
+                            
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="full-text">${id}</td>
+                                <td class="full-text">${driver.name}</td>
+                                <td class="full-text">${driver.licenseNumber}</td>
+                                <td>${driver.vehicleType ? driver.vehicleType.charAt(0).toUpperCase() + driver.vehicleType.slice(1) : 'N/A'}</td>
+                                <td>${assignedOrders}</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editDriver('${id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDriver('${id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            `;
+                            driversTable.appendChild(row);
+                        });
+                    });
+                } else {
+                    driversTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No drivers found</td></tr>';
+                }
+            });
+        }
+
+        // Load all spare parts
+        function loadSpareParts() {
+            database.ref('spareParts').once('value').then(snapshot => {
+                const parts = snapshot.val();
+                const partsTable = document.getElementById('partsList');
+                partsTable.innerHTML = '';
+                
+                if (parts) {
+                    Object.entries(parts).forEach(([id, part]) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="full-text">${id}</td>
+                            <td class="full-text">${part.name}</td>
+                            <td><img src="${part.imageUrl || 'https://via.placeholder.com/50'}" width="50" height="50" style="object-fit: cover;"></td>
+                            <td>$${parseFloat(part.price).toFixed(2)}</td>
+                            <td>${part.stock}</td>
+                            <td>${part.sold || 0}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editPart('${id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deletePart('${id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        partsTable.appendChild(row);
+                    });
+                } else {
+                    partsTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No parts found</td></tr>';
+                }
+            });
+        }
+
+        // Load reports data and charts
+        function loadReports() {
+            // Sales data for chart
+            const salesData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Monthly Sales',
+                    data: [1200, 1900, 1500, 2000, 1800, 2200],
+                    backgroundColor: 'rgba(13, 37, 56, 0.2)',
+                    borderColor: 'rgba(13, 37, 56, 1)',
+                    borderWidth: 1
+                }]
+            };
+            
+            // Top parts data for chart
+            const topPartsData = {
+                labels: ['Brake Pads', 'Oil Filter', 'Spark Plugs', 'Air Filter', 'Battery'],
+                datasets: [{
+                    label: 'Units Sold',
+                    data: [65, 59, 42, 38, 25],
+                    backgroundColor: [
+                        'rgba(13, 37, 56, 0.7)',
+                        'rgba(249, 170, 51, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ]
+                }]
+            };
+            
+            // Order status data for chart
+            const statusData = {
+                labels: ['Pending', 'Shipped', 'Delivered', 'Cancelled'],
+                datasets: [{
+                    data: [15, 10, 25, 2],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(0, 123, 255, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ]
+                }]
+            };
+            
+            // Driver performance data
+            const driverData = {
+                labels: ['Driver 1', 'Driver 2', 'Driver 3', 'Driver 4'],
+                datasets: [{
+                    label: 'Deliveries Completed',
+                    data: [25, 18, 30, 12],
+                    backgroundColor: 'rgba(13, 37, 56, 0.7)'
+                }]
+            };
+            
+            // Destroy existing charts if they exist
+            if (salesChart) salesChart.destroy();
+            if (topPartsChart) topPartsChart.destroy();
+            if (statusChart) statusChart.destroy();
+            if (driverChart) driverChart.destroy();
+            
+            // Create new charts
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: salesData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+            
+            const topPartsCtx = document.getElementById('topPartsChart').getContext('2d');
+            topPartsChart = new Chart(topPartsCtx, {
+                type: 'bar',
+                data: topPartsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: statusData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+            
+            const driverCtx = document.getElementById('driverChart').getContext('2d');
+            driverChart = new Chart(driverCtx, {
+                type: 'bar',
+                data: driverData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // View order details in modal
+        function viewOrderDetailsModal(userId, orderId) {
+            selectedOrder = { userId, orderId };
+            
+            // Get user data
+            database.ref(`usersID/${userId}`).once('value').then(userSnapshot => {
+                const userData = userSnapshot.val() || {};
+                
+                // Get order data
+                database.ref(`users/${userId}/orders/${orderId}`).once('value').then(orderSnapshot => {
+                    const order = orderSnapshot.val();
+                    
+                    // Update modal with order details
+                    document.getElementById('modalOrderId').textContent = orderId;
+                    document.getElementById('modalCustomerName').textContent = userData.username || 'Unknown';
+                    document.getElementById('modalCustomerPhone').textContent = userData.phone || 'N/A';
+                    document.getElementById('modalCustomerAddress').textContent = userData.address || 'N/A';
+                    document.getElementById('modalOrderDate').textContent = order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A';
+                    document.getElementById('modalOrderStatus').textContent = order.status || 'Pending';
+                    document.getElementById('modalOrderStatus').className = `badge badge-${order.status ? order.status.toLowerCase() : 'pending'}`;
+                    document.getElementById('modalOrderTotal').textContent = order.total ? order.total.toFixed(2) : '0.00';
+                    document.getElementById('modalOrderDriver').textContent = order.driver || 'Not assigned';
+                    document.getElementById('updateStatus').value = order.status || 'Pending';
+                    
+                    // Update order items
+                    const itemsTable = document.getElementById('modalOrderItems');
+                    itemsTable.innerHTML = '';
+                    
+                    if (order.items && order.items.length > 0) {
+                        order.items.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="full-text">${item.name}</td>
+                                <td>$${parseFloat(item.price).toFixed(2)}</td>
+                                <td>${item.quantity}</td>
+                                <td>$${(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</td>
+                            `;
+                            itemsTable.appendChild(row);
+                        });
+                    }
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                    modal.show();
+                });
+            });
+        }
+
+        // Update order status from modal
+        function updateOrderStatus() {
+            if (!selectedOrder) return;
+            
+            const { userId, orderId } = selectedOrder;
+            const newStatus = document.getElementById('updateStatus').value;
+            
+            database.ref(`users/${userId}/orders/${orderId}/status`).set(newStatus)
+                .then(() => {
+                    alert('Order status updated successfully');
+                    loadAllOrders();
+                    loadDashboardData();
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+                    modal.hide();
+                })
+                .catch(error => {
+                    console.error('Error updating order status:', error);
+                    alert('Failed to update order status');
+                });
+        }
+
+        // Add new driver
+        function addNewDriver() {
+            const name = document.getElementById('driverName').value;
+            const license = document.getElementById('driverLicense').value;
+            const vehicle = document.getElementById('driverVehicle').value;
+            const imageUrl = document.getElementById('driverImage').value || 'https://via.placeholder.com/150';
+            
+            const newDriver = {
+                name,
+                licenseNumber: license,
+                vehicleType: vehicle,
+                imageUrl
+            };
+            
+            database.ref('drivers').push(newDriver)
+                .then(() => {
+                    alert('Driver added successfully');
+                    document.getElementById('driverForm').reset();
+                    bootstrap.Modal.getInstance(document.getElementById('addDriverModal')).hide();
+                    loadDrivers();
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error adding driver:', error);
+                    alert('Failed to add driver');
+                });
+        }
+
+        // Edit driver (placeholder)
+        function editDriver(driverId) {
+            alert('Edit driver functionality would be implemented here for driver: ' + driverId);
+        }
+
+        // Delete driver
+        function deleteDriver(driverId) {
+            if (confirm('Are you sure you want to delete this driver?')) {
+                database.ref(`drivers/${driverId}`).remove()
+                    .then(() => {
+                        alert('Driver deleted successfully');
+                        loadDrivers();
+                        loadDashboardData();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting driver:', error);
+                        alert('Failed to delete driver');
+                    });
+            }
+        }
+
+        // Add new spare part
+        function addNewPart() {
+            const name = document.getElementById('partName').value;
+            const price = parseFloat(document.getElementById('partPrice').value);
+            const stock = parseInt(document.getElementById('partStock').value);
+            const imageUrl = document.getElementById('partImage').value || 'https://via.placeholder.com/150';
+            
+            const newPart = {
+                name,
+                price,
+                stock,
+                sold: 0,
+                imageUrl
+            };
+            
+            database.ref('spareParts').push(newPart)
+                .then(() => {
+                    alert('Spare part added successfully');
+                    document.getElementById('partForm').reset();
+                    bootstrap.Modal.getInstance(document.getElementById('addPartModal')).hide();
+                    loadSpareParts();
+                    loadDashboardData();
+                })
+                .catch(error => {
+                    console.error('Error adding spare part:', error);
+                    alert('Failed to add spare part');
+                });
+        }
+
+        // Edit part (placeholder)
+        function editPart(partId) {
+            alert('Edit part functionality would be implemented here for part: ' + partId);
+        }
+
+        // Delete part
+        function deletePart(partId) {
+            if (confirm('Are you sure you want to delete this part?')) {
+                database.ref(`spareParts/${partId}`).remove()
+                    .then(() => {
+                        alert('Part deleted successfully');
+                        loadSpareParts();
+                        loadDashboardData();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting part:', error);
+                        alert('Failed to delete part');
+                    });
+            }
+        }
+
+        // Sign out function
+        function signOut() {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html';
+            }).catch(error => {
+                console.error('Sign out error:', error);
+            });
+        }
+
+        // Initialize form submissions
+        document.getElementById('driverForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            addNewDriver();
+        });
+        
+        document.getElementById('partForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            addNewPart();
+        });
+        
+        // Setup order filter
+        document.getElementById('orderFilter').addEventListener('change', function() {
+            loadAllOrders();
+        });
+
+        // Make functions available globally
+        window.setupSidebar = setupSidebar;
+        window.loadDashboardData = loadDashboardData;
+        window.loadAllOrders = loadAllOrders;
+        window.loadDrivers = loadDrivers;
+        window.loadSpareParts = loadSpareParts;
+        window.loadReports = loadReports;
+        window.viewOrderDetailsModal = viewOrderDetailsModal;
+        window.updateOrderStatus = updateOrderStatus;
+        window.addNewDriver = addNewDriver;
+        window.editDriver = editDriver;
+        window.deleteDriver = deleteDriver;
+        window.addNewPart = addNewPart;
+        window.editPart = editPart;
+        window.deletePart = deletePart;
+        window.signOut = signOut;
+    </script>
+</body>
+</html>
