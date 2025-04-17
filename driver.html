@@ -330,7 +330,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
+     <script>
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB2-eh6sLvD9iUd6vXcznB7MjhdZjdrY5w",
@@ -352,7 +352,6 @@
         let currentDriverAuthId = null;
         let selectedOrderId = null;
         let editProfileModal = null;
-        let ordersListener = null;
 
         // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -365,7 +364,7 @@
                     currentDriverAuthId = user.uid;
                     currentDriverId = user.uid;
                     
-                    // Load driver profile and orders
+                    // Load the profile and other data
                     loadDriverProfile();
                     loadDriverOrders();
                 } else {
@@ -381,37 +380,15 @@
             });
         });
 
-        // Show error message
-        function showError(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = `
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            
-            // Insert at the top of the container
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                const alert = bootstrap.Alert.getOrCreateInstance(alertDiv);
-                alert.close();
-            }, 5000);
-        }
-
         // Load driver profile from Firebase
         function loadDriverProfile() {
             // Display the authentication ID
             document.getElementById('driverAuthId').textContent = currentDriverAuthId;
             document.getElementById('driverAuthIdDisplay').textContent = `Driver ID: ${currentDriverAuthId}`;
             
-            // Get user details from users node
-            const userRef = database.ref(`users/${currentDriverAuthId}`);
-            userRef.once('value').then((userSnapshot) => {
+            // First get user details from usersID
+            const usersIDRef = database.ref(`usersID/${currentDriverAuthId}`);
+            usersIDRef.once('value').then((userSnapshot) => {
                 const userData = userSnapshot.val() || {};
                 
                 // Update basic profile information
@@ -444,28 +421,20 @@
                 });
             }).catch(error => {
                 console.error('Error loading driver profile:', error);
-                showError('Failed to load driver profile. Please try again.');
+                showToast('Failed to load driver profile', 'error');
             });
         }
 
         // Load orders assigned to the current driver
         function loadDriverOrders() {
             const ordersTableBody = document.getElementById('ordersTableBody');
-            const refreshBtn = document.getElementById('refreshOrdersBtn');
-            
-            // Show loading state
             ordersTableBody.innerHTML = `
                 <tr><td colspan="5" class="text-center py-3">
                     <span class="loading-spinner me-2"></span>
                     Loading orders...
                 </td></tr>
             `;
-            
-            // Disable refresh button during load
-            refreshBtn.disabled = true;
-            refreshBtn.innerHTML = '<span class="loading-spinner me-2"></span> Refreshing';
 
-            // Get all users and check their orders
             const usersRef = database.ref('users');
             usersRef.once('value').then((snapshot) => {
                 ordersTableBody.innerHTML = '';
@@ -473,60 +442,54 @@
 
                 snapshot.forEach((userSnapshot) => {
                     const userId = userSnapshot.key;
-                    const userOrders = userSnapshot.child('orders').val() || {};
                     const userData = userSnapshot.val() || {};
-                    
-                    if (userOrders && typeof userOrders === 'object') {
-                        Object.entries(userOrders).forEach(([orderId, order]) => {
-                            if (!order) return;
+                    const userOrders = userData.orders || {};
+
+                    Object.entries(userOrders).forEach(([orderId, order]) => {
+                        if (!order) return;
+                        
+                        // Check if order is assigned to current driver
+                        const isAssignedToDriver = order.driverId === currentDriverAuthId || 
+                                                 (order.driver && order.driver.id === currentDriverAuthId);
+                        
+                        if (isAssignedToDriver) {
+                            hasOrders = true;
                             
-                            // Check if order is assigned to current driver
-                            const isAssignedToDriver = order.driverId === currentDriverAuthId || 
-                                                     (order.driver && order.driver.id === currentDriverAuthId);
-                            
-                            if (isAssignedToDriver) {
-                                hasOrders = true;
-                                
-                                // Calculate order total safely
-                                let orderTotal = calculateOrderTotal(order);
+                            // Calculate order total safely
+                            let orderTotal = calculateOrderTotal(order);
 
-                                // Get customer name safely
-                                const customerName = userData.username || 
-                                                   (userData.firstName && userData.lastName ? 
-                                                    `${userData.firstName} ${userData.lastName}` : 
-                                                    'Unknown Customer');
+                            // Get customer name safely
+                            const customerName = userData.username || 
+                                               (userData.firstName && userData.lastName ? 
+                                                `${userData.firstName} ${userData.lastName}` : 
+                                                'Unknown Customer');
 
-                                // Get order status safely
-                                const orderStatus = order.status || 'Pending';
-                                const statusClass = orderStatus.toLowerCase().replace(' ', '');
+                            // Get order status safely
+                            const orderStatus = order.status || 'Pending';
+                            const statusClass = orderStatus.toLowerCase().replace(' ', '');
 
-                                // Create table row
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td class="order-id-cell full-text">${orderId}</td>
-                                    <td class="full-text">${customerName}</td>
-                                    <td><span class="status-badge status-${statusClass}">
-                                        ${orderStatus}
-                                    </span></td>
-                                    <td>$${orderTotal.toFixed(2)}</td>
-                                    <td><button class="btn btn-sm btn-outline-primary action-btn" 
-                                        onclick="viewOrderDetails('${userId}', '${orderId}', event)">
-                                        View
-                                    </button></td>
-                                `;
-                                ordersTableBody.appendChild(row);
-                            }
-                        });
-                    }
+                            // Create table row
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="order-id-cell full-text">${orderId}</td>
+                                <td class="full-text">${customerName}</td>
+                                <td><span class="status-badge status-${statusClass}">
+                                    ${orderStatus}
+                                </span></td>
+                                <td>$${orderTotal.toFixed(2)}</td>
+                                <td><button class="btn btn-sm btn-outline-primary action-btn" 
+                                    onclick="viewOrderDetails('${userId}', '${orderId}', event)">
+                                    View
+                                </button></td>
+                            `;
+                            ordersTableBody.appendChild(row);
+                        }
+                    });
                 });
 
                 if (!hasOrders) {
                     ordersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No orders assigned to you</td></tr>';
                 }
-                
-                // Re-enable refresh button
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             }).catch(error => {
                 console.error('Error loading orders:', error);
                 ordersTableBody.innerHTML = `
@@ -534,9 +497,7 @@
                         Error loading orders. <button class="btn btn-sm btn-link" onclick="loadDriverOrders()">Try again</button>
                     </td></tr>
                 `;
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
-                showError('Failed to load orders. Please try again.');
+                showToast('Failed to load orders', 'error');
             });
         }
 
@@ -546,102 +507,132 @@
             
             // Show loading state
             const orderDetails = document.getElementById('orderDetails');
+            const noOrderSelected = document.getElementById('noOrderSelected');
+            
+            if (!orderDetails || !noOrderSelected) {
+                console.error('Order details elements not found');
+                return;
+            }
+            
             orderDetails.style.display = 'none';
-            document.getElementById('noOrderSelected').style.display = 'none';
-            orderDetails.innerHTML = `
-                <div class="text-center py-4">
-                    <span class="loading-spinner me-2"></span>
-                    Loading order details...
-                </div>
+            noOrderSelected.style.display = 'none';
+            
+            // Create temporary loading content
+            const loadingContent = document.createElement('div');
+            loadingContent.className = 'text-center py-4';
+            loadingContent.innerHTML = `
+                <span class="loading-spinner me-2"></span>
+                Loading order details...
             `;
+            
+            // Clear previous content and show loading
+            orderDetails.innerHTML = '';
+            orderDetails.appendChild(loadingContent);
             orderDetails.style.display = 'block';
 
             selectedOrderId = { userId, orderId };
             
-            const orderRef = database.ref(`users/${userId}/orders/${orderId}`);
-            orderRef.once('value').then((orderSnapshot) => {
-                const order = orderSnapshot.val();
+            // First get user details
+            const userRef = database.ref(`users/${userId}`);
+            userRef.once('value').then((userSnapshot) => {
+                const userData = userSnapshot.val() || {};
                 
-                if (!order) {
-                    throw new Error('Order not found');
-                }
-                
-                // Get user data for customer information
-                return database.ref(`users/${userId}`).once('value').then((userSnapshot) => {
-                    const userData = userSnapshot.val() || {};
+                // Then get order details
+                const orderRef = database.ref(`users/${userId}/orders/${orderId}`);
+                return orderRef.once('value').then((orderSnapshot) => {
+                    const order = orderSnapshot.val();
                     
-                    // Generate the order details HTML
-                    orderDetails.innerHTML = `
-                        <div class="customer-info mb-3">
+                    if (!order) {
+                        throw new Error('Order not found');
+                    }
+                    
+                    // Create the order details content
+                    const orderDetailsContent = `
+                        <div class="customer-info">
                             <h5><i class="fas fa-user-circle me-2"></i>Customer Information</h5>
                             <div class="profile-detail">
                                 <i class="fas fa-user"></i>
                                 <div>
                                     <strong>Name:</strong>
-                                    <span class="full-text">${userData.username || 'Unknown Customer'}</span>
+                                    <span id="customerName">${userData.username || 'Unknown Customer'}</span>
                                 </div>
                             </div>
                             <div class="profile-detail">
                                 <i class="fas fa-phone"></i>
                                 <div>
                                     <strong>Phone:</strong>
-                                    <span class="full-text">${userData.phone || 'Not provided'}</span>
+                                    <span id="customerPhone">${userData.phone || 'Not provided'}</span>
                                 </div>
                             </div>
                             <div class="profile-detail">
                                 <i class="fas fa-map-marker-alt"></i>
                                 <div>
                                     <strong>Address:</strong>
-                                    <span class="full-text">${userData.address || 'Not provided'}</span>
+                                    <span id="customerAddress">${userData.address || 'Not provided'}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="order-summary mb-3">
+                        <div class="order-summary">
                             <h5><i class="fas fa-clipboard-list me-2"></i>Order Summary</h5>
                             <div class="order-meta">
                                 <div class="order-meta-item">
                                     <strong>Order ID</strong>
-                                    <span class="full-text">${orderId}</span>
+                                    <span id="detailOrderId">${orderId}</span>
                                 </div>
                                 <div class="order-meta-item">
                                     <strong>Status</strong>
-                                    <span class="status-badge status-${order.status ? order.status.toLowerCase().replace(' ', '') : 'pending'}">
+                                    <span id="detailOrderStatus" class="status-badge status-${order.status ? order.status.toLowerCase().replace(' ', '') : 'pending'}">
                                         ${order.status || 'Pending'}
                                     </span>
                                 </div>
                                 <div class="order-meta-item">
                                     <strong>Date</strong>
-                                    <span class="full-text">${order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A'}</span>
+                                    <span id="detailOrderDate">${
+                                        order.lastUpdated ? new Date(order.lastUpdated).toLocaleString() : 
+                                        (order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A')
+                                    }</span>
                                 </div>
                                 <div class="order-meta-item">
                                     <strong>Total</strong>
-                                    <span class="full-text">$${calculateOrderTotal(order).toFixed(2)}</span>
+                                    <span id="detailOrderTotal">$${calculateOrderTotal(order).toFixed(2)}</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="driver-info mb-3">
-                            <h5><i class="fas fa-truck me-2"></i>Driver Information</h5>
-                            <div class="profile-detail">
-                                <i class="fas fa-user"></i>
-                                <div>
-                                    <strong>Name:</strong>
-                                    <span class="full-text">${order.driver ? order.driver.name : 'Not Assigned'}</span>
+                            
+                            <div class="driver-info">
+                                <h5><i class="fas fa-truck me-2"></i>Driver Information</h5>
+                                <div class="profile-detail">
+                                    <i class="fas fa-user"></i>
+                                    <div>
+                                        <strong>Name:</strong>
+                                        <span id="driverName">${order.driver ? order.driver.name : 'Not Assigned'}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="profile-detail">
-                                <i class="fas fa-id-badge"></i>
-                                <div>
-                                    <strong>Driver ID:</strong>
-                                    <span class="full-text">${order.driverId || 'N/A'}</span>
+                                <div class="profile-detail">
+                                    <i class="fas fa-id-badge"></i>
+                                    <div>
+                                        <strong>Driver ID:</strong>
+                                        <span id="driverId">${order.driverId || 'N/A'}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="profile-detail">
-                                <i class="fas fa-phone"></i>
-                                <div>
-                                    <strong>Contact:</strong>
-                                    <span class="full-text">${order.driver ? order.driver.contact : 'N/A'}</span>
+                                <div class="profile-detail">
+                                    <i class="fas fa-phone"></i>
+                                    <div>
+                                        <strong>Contact:</strong>
+                                        <span id="driverContact">${order.driver ? order.driver.contact : 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div class="profile-detail">
+                                    <i class="fas fa-clock"></i>
+                                    <div>
+                                        <strong>Delivery Time:</strong>
+                                        <input type="datetime-local" id="deliveryTimeInput" class="datetime-picker" onchange="updateDeliveryTime(this.value)" value="${
+                                            order.deliveryTime ? new Date(order.deliveryTime).toISOString().slice(0, 16) : ''
+                                        }">
+                                        <span id="deliveryTimeDisplay">${
+                                            order.deliveryTime ? new Date(order.deliveryTime).toLocaleString() : 'Not set'
+                                        }</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -658,24 +649,39 @@
                                             <th>Total</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        ${renderOrderItems(order.items || [])}
+                                    <tbody id="orderItemsList">
+                                        ${order.items && Array.isArray(order.items) ? 
+                                            order.items.map(item => {
+                                                const price = parseFloat(item.price) || 0;
+                                                const quantity = parseInt(item.quantity) || 0;
+                                                const total = (price * quantity).toFixed(2);
+                                                return `
+                                                    <tr>
+                                                        <td class="full-text">${item.name || 'Unknown Item'}</td>
+                                                        <td>${quantity}</td>
+                                                        <td>$${price.toFixed(2)}</td>
+                                                        <td>$${total}</td>
+                                                    </tr>
+                                                `;
+                                            }).join('') : ''
+                                        }
                                     </tbody>
                                 </table>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            ${order.status === 'Pending' ? 
-                                `<button class="btn btn-warning me-md-2" onclick="updateOrderStatus('Shipped')">
-                                    <i class="fas fa-play me-1"></i>Start Delivery
-                                </button>` : ''}
-                            ${order.status === 'Shipped' ? 
-                                `<button class="btn btn-success" onclick="updateOrderStatus('Delivered')">
-                                    <i class="fas fa-check me-1"></i>Complete Delivery
-                                </button>` : ''}
+                            <button id="btnStartDelivery" class="btn btn-warning me-md-2" onclick="updateOrderStatus('Shipped')" style="display: ${order.status === 'Pending' ? 'block' : 'none'}">
+                                <i class="fas fa-play me-1"></i>Start Delivery
+                            </button>
+                            <button id="btnCompleteDelivery" class="btn btn-success" onclick="updateOrderStatus('Delivered')" style="display: ${order.status === 'Shipped' ? 'block' : 'none'}">
+                                <i class="fas fa-check me-1"></i>Complete Delivery
+                            </button>
                         </div>
                     `;
+                    
+                    // Update the order details with the new content
+                    orderDetails.innerHTML = orderDetailsContent;
                 });
             }).catch(error => {
                 console.error('Error loading order details:', error);
@@ -704,26 +710,30 @@
             return 0;
         }
 
-        // Helper function to render order items
-        function renderOrderItems(items) {
-            if (!items || !Array.isArray(items) || items.length === 0) {
-                return '<tr><td colspan="4" class="text-center text-muted py-3">No items found</td></tr>';
-            }
+        // Update delivery time for the current order
+        function updateDeliveryTime(deliveryTime) {
+            if (!selectedOrderId || !deliveryTime) return;
             
-            return items.map(item => {
-                const price = parseFloat(item.price) || 0;
-                const quantity = parseInt(item.quantity) || 0;
-                const total = (price * quantity).toFixed(2);
-                
-                return `
-                    <tr>
-                        <td class="full-text">${item.name || 'Unknown Item'}</td>
-                        <td>${quantity}</td>
-                        <td>$${price.toFixed(2)}</td>
-                        <td>$${total}</td>
-                    </tr>
-                `;
-            }).join('');
+            const { userId, orderId } = selectedOrderId;
+            const deliveryDate = new Date(deliveryTime);
+            
+            const updates = {
+                [`users/${userId}/orders/${orderId}/deliveryTime`]: deliveryDate.toISOString()
+            };
+            
+            database.ref().update(updates)
+                .then(() => {
+                    // Update the displayed delivery time
+                    const deliveryTimeDisplay = document.getElementById('deliveryTimeDisplay');
+                    if (deliveryTimeDisplay) {
+                        deliveryTimeDisplay.textContent = deliveryDate.toLocaleString();
+                    }
+                    showToast('Delivery time updated successfully');
+                })
+                .catch(error => {
+                    console.error('Error updating delivery time:', error);
+                    showToast('Failed to update delivery time', 'error');
+                });
         }
 
         // Update order status
@@ -735,15 +745,6 @@
             updates[`users/${userId}/orders/${orderId}/status`] = newStatus;
             updates[`users/${userId}/orders/${orderId}/lastUpdated`] = new Date().toISOString();
             
-            // Show loading state
-            const orderDetails = document.getElementById('orderDetails');
-            orderDetails.innerHTML = `
-                <div class="text-center py-4">
-                    <span class="loading-spinner me-2"></span>
-                    Updating order status...
-                </div>
-            `;
-
             // Automatically assign the current driver when status changes to Shipped
             if (newStatus === 'Shipped') {
                 updates[`users/${userId}/orders/${orderId}/driverId`] = currentDriverAuthId;
@@ -752,11 +753,12 @@
                 const driverRef = database.ref(`drivers/${currentDriverAuthId}`);
                 driverRef.once('value').then((driverSnapshot) => {
                     const driverData = driverSnapshot.val() || {};
-                    const userRef = database.ref(`users/${currentDriverAuthId}`);
-                    return userRef.once('value').then((userSnapshot) => {
+                    const usersIDRef = database.ref(`usersID/${currentDriverAuthId}`);
+                    return usersIDRef.once('value').then((userSnapshot) => {
                         const userData = userSnapshot.val() || {};
                         
                         updates[`users/${userId}/orders/${orderId}/driver`] = {
+                            id: currentDriverAuthId,
                             name: driverData.name || userData.username || "Driver",
                             contact: userData.phone || "N/A"
                         };
@@ -764,58 +766,39 @@
                         return database.ref().update(updates);
                     });
                 }).then(() => {
+                    showToast(`Order status updated to ${newStatus}`);
+                    viewOrderDetails(userId, orderId); // Refresh the view
+                    
                     // If status is delivered, increment driver's delivery count
                     if (newStatus === 'Delivered') {
-                        const driverRef = database.ref(`drivers/${currentDriverId}`);
-                        return driverRef.transaction((driver) => {
+                        const driverRef = database.ref(`drivers/${currentDriverAuthId}`);
+                        driverRef.transaction((driver) => {
                             if (driver) {
                                 driver.totalDeliveries = (driver.totalDeliveries || 0) + 1;
                             }
                             return driver;
+                        }).then(() => {
+                            // Update the displayed delivery count
+                            const totalDeliveriesElement = document.getElementById('totalDeliveries');
+                            if (totalDeliveriesElement) {
+                                totalDeliveriesElement.textContent = 
+                                    parseInt(totalDeliveriesElement.textContent) + 1;
+                            }
                         });
                     }
-                }).then(() => {
-                    // Refresh the order details view
-                    viewOrderDetails(userId, orderId);
-                    // Refresh the orders list
-                    loadDriverOrders();
                 }).catch(error => {
                     console.error('Error updating order status:', error);
-                    document.getElementById('orderDetails').innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Failed to update order status: ${error.message}
-                        </div>
-                    `;
+                    showToast('Failed to update order status', 'error');
                 });
             } else {
                 database.ref().update(updates)
                     .then(() => {
-                        // If status is delivered, increment driver's delivery count
-                        if (newStatus === 'Delivered') {
-                            const driverRef = database.ref(`drivers/${currentDriverId}`);
-                            return driverRef.transaction((driver) => {
-                                if (driver) {
-                                    driver.totalDeliveries = (driver.totalDeliveries || 0) + 1;
-                                }
-                                return driver;
-                            });
-                        }
-                    })
-                    .then(() => {
-                        // Refresh the order details view
-                        viewOrderDetails(userId, orderId);
-                        // Refresh the orders list
-                        loadDriverOrders();
+                        showToast(`Order status updated to ${newStatus}`);
+                        viewOrderDetails(userId, orderId); // Refresh the view
                     })
                     .catch(error => {
                         console.error('Error updating order status:', error);
-                        document.getElementById('orderDetails').innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Failed to update order status: ${error.message}
-                            </div>
-                        `;
+                        showToast('Failed to update order status', 'error');
                     });
             }
         }
@@ -829,47 +812,16 @@
                 imageUrl: document.getElementById('editPhoto').value || 'https://via.placeholder.com/150'
             };
 
-            // Show loading state
-            const saveBtn = document.getElementById('saveProfileBtn');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="loading-spinner me-2"></span> Saving...';
-
             database.ref(`drivers/${currentDriverId}`).update(updates)
                 .then(() => {
+                    showToast('Profile updated successfully');
                     editProfileModal.hide();
                     loadDriverProfile(); // Refresh profile display
-                    showSuccess('Profile updated successfully');
                 })
                 .catch(error => {
                     console.error('Error updating profile:', error);
-                    showError('Failed to update profile');
-                })
-                .finally(() => {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = 'Save Changes';
+                    showToast('Failed to update profile', 'error');
                 });
-        }
-
-        // Show success message
-        function showSuccess(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-success alert-dismissible fade show';
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = `
-                <i class="fas fa-check-circle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            
-            // Insert at the top of the container
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                const alert = bootstrap.Alert.getOrCreateInstance(alertDiv);
-                alert.close();
-            }, 5000);
         }
 
         // Sign out function
@@ -878,7 +830,7 @@
                 window.location.href = 'loginandreg.html';
             }).catch(error => {
                 console.error('Error signing out:', error);
-                showError('Error signing out. Please try again.');
+                showToast('Error signing out', 'error');
             });
         }
 
@@ -887,11 +839,39 @@
             editProfileModal.show();
         }
 
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast show align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toast.role = 'alert';
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
         // Expose functions to global scope for HTML onclick handlers
         window.viewOrderDetails = viewOrderDetails;
         window.updateOrderStatus = updateOrderStatus;
         window.openEditProfileModal = openEditProfileModal;
         window.signOut = signOut;
+        window.updateDeliveryTime = updateDeliveryTime;
         window.loadDriverOrders = loadDriverOrders;
     </script>
 </body>
