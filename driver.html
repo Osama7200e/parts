@@ -10,7 +10,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #ffffff;
+            background-color: #f8f9fa;
         }
 
         .navbar {
@@ -74,7 +74,7 @@
             color: #856404;
         }
 
-        .status-inprogress {
+        .status-shipped {
             background-color: #cce5ff;
             color: #004085;
         }
@@ -161,6 +161,31 @@
             padding: 0.375rem 0.75rem;
             border: 1px solid #ced4da;
             border-radius: 0.25rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #0D2538;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .action-btn {
+            min-width: 80px;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
         }
     </style>
 </head>
@@ -258,8 +283,11 @@
             <!-- Orders Section -->
             <div class="col-lg-6 mb-4">
                 <div class="card h-100">
-                    <div class="card-header text-white">
+                    <div class="card-header text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Assigned Orders</h5>
+                        <button class="btn btn-sm btn-light" onclick="loadDriverOrders()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -274,7 +302,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="ordersTableBody">
-                                    <!-- Orders will be populated here -->
+                                    <tr><td colspan="5" class="text-center py-3"><span class="loading-spinner me-2"></span>Loading orders...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -406,32 +434,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Spare Parts Inventory -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header text-white">
-                        <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Spare Parts Inventory</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Part Name</th>
-                                        <th>Price</th>
-                                        <th>Stock</th>
-                                        <th>Sold</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sparePartsTableBody">
-                                    <!-- Spare parts will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -476,6 +478,9 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <!-- Firebase SDK and Bootstrap JS -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -514,34 +519,14 @@
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentDriverAuthId = user.uid;
+                    currentDriverId = user.uid;
                     
-                    // First check if driver profile exists
-                    const driverRef = database.ref('drivers/' + user.uid);
-                    driverRef.once('value').then((snapshot) => {
-                        if (!snapshot.exists()) {
-                            // Create a new driver profile if it doesn't exist
-                            const userRef = database.ref('usersID/' + user.uid);
-                            return userRef.once('value').then((userSnapshot) => {
-                                const userData = userSnapshot.val() || {};
-                                const newDriver = {
-                                    name: userData.username || 'New Driver',
-                                    licenseNumber: '',
-                                    vehicleType: 'car',
-                                    imageUrl: 'https://via.placeholder.com/150',
-                                    totalDeliveries: 0
-                                };
-                                return driverRef.set(newDriver);
-                            });
-                        }
-                    }).then(() => {
-                        // Now load the profile and other data
-                        loadDriverProfile();
-                        loadDriverOrders();
-                        loadSpareParts();
-                    }).catch(error => {
-                        console.error('Error initializing driver profile:', error);
-                        alert('Error loading driver data');
-                    });
+                    // Load the profile and other data
+                    loadDriverProfile();
+                    loadDriverOrders();
+                    
+                    // Set up real-time listeners
+                    setupRealtimeListeners();
                 } else {
                     // Redirect to login page if not authenticated
                     window.location.href = 'loginandreg.html';
@@ -555,6 +540,20 @@
             });
         });
 
+        // Set up real-time listeners for data changes
+        function setupRealtimeListeners() {
+            // Listen for changes to the driver's profile
+            database.ref(`drivers/${currentDriverAuthId}`).on('value', (snapshot) => {
+                const driverData = snapshot.val() || {};
+                updateDriverProfileUI(driverData);
+            });
+            
+            // Listen for changes to orders assigned to this driver
+            database.ref('users').on('value', (snapshot) => {
+                updateOrdersList(snapshot);
+            });
+        }
+
         // Load driver profile from Firebase
         function loadDriverProfile() {
             // Display the authentication ID
@@ -562,7 +561,7 @@
             document.getElementById('driverAuthIdDisplay').textContent = `Driver ID: ${currentDriverAuthId}`;
             
             // First get user details from usersID
-            const usersIDRef = database.ref('usersID/' + currentDriverAuthId);
+            const usersIDRef = database.ref(`usersID/${currentDriverAuthId}`);
             usersIDRef.once('value').then((userSnapshot) => {
                 const userData = userSnapshot.val() || {};
                 
@@ -573,82 +572,116 @@
                 document.getElementById('driverRole').textContent = userData.role ? 
                     userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'Not set';
                 
-                // Then get driver details from drivers node using auth ID as key
-                const driversRef = database.ref('drivers/' + currentDriverAuthId);
+                // Then get driver details from drivers node
+                const driversRef = database.ref(`drivers/${currentDriverAuthId}`);
                 return driversRef.once('value').then((driverSnapshot) => {
                     const driverData = driverSnapshot.val() || {};
-                    currentDriverId = currentDriverAuthId;
-                    
-                    // Update UI with driver data
-                    const displayName = driverData.name || userData.username || 'Driver';
-                    document.getElementById('driverFullName').textContent = displayName;
-                    document.getElementById('driverNameDisplay').textContent = displayName;
-                    document.getElementById('driverLicense').textContent = driverData.licenseNumber || 'Not set';
-                    document.getElementById('driverVehicle').textContent = driverData.vehicleType ? 
-                        driverData.vehicleType.charAt(0).toUpperCase() + driverData.vehicleType.slice(1) : 'Not set';
-                    document.getElementById('driverPhoto').src = driverData.imageUrl || 'https://via.placeholder.com/150';
-                    document.getElementById('totalDeliveries').textContent = driverData.totalDeliveries || 0;
-                    
-                    // Set form values
-                    document.getElementById('editFullName').value = driverData.name || '';
-                    document.getElementById('editLicense').value = driverData.licenseNumber || '';
-                    document.getElementById('editVehicle').value = driverData.vehicleType || 'car';
-                    document.getElementById('editPhoto').value = driverData.imageUrl || '';
+                    updateDriverProfileUI(driverData, userData);
                 });
             }).catch(error => {
                 console.error('Error loading driver profile:', error);
-                alert('Failed to load driver profile');
+                showToast('Failed to load driver profile', 'error');
             });
+        }
+
+        // Update driver profile UI with data
+        function updateDriverProfileUI(driverData, userData = {}) {
+            // Update UI with driver data
+            const displayName = driverData.name || userData.username || 'Driver';
+            document.getElementById('driverFullName').textContent = displayName;
+            document.getElementById('driverNameDisplay').textContent = displayName;
+            document.getElementById('driverLicense').textContent = driverData.licenseNumber || 'Not set';
+            document.getElementById('driverVehicle').textContent = driverData.vehicleType ? 
+                driverData.vehicleType.charAt(0).toUpperCase() + driverData.vehicleType.slice(1) : 'Not set';
+            document.getElementById('driverPhoto').src = driverData.imageUrl || 'https://via.placeholder.com/150';
+            document.getElementById('totalDeliveries').textContent = driverData.totalDeliveries || 0;
+            
+            // Set form values
+            document.getElementById('editFullName').value = driverData.name || '';
+            document.getElementById('editLicense').value = driverData.licenseNumber || '';
+            document.getElementById('editVehicle').value = driverData.vehicleType || 'car';
+            document.getElementById('editPhoto').value = driverData.imageUrl || '';
+        }
+
+        // Update orders list with data from snapshot
+        function updateOrdersList(snapshot) {
+            const ordersTableBody = document.getElementById('ordersTableBody');
+            ordersTableBody.innerHTML = '';
+            let hasOrders = false;
+
+            snapshot.forEach((userSnapshot) => {
+                const userId = userSnapshot.key;
+                const userData = userSnapshot.val() || {};
+                const userOrders = userData.orders || {};
+
+                Object.entries(userOrders).forEach(([orderId, order]) => {
+                    if (!order) return;
+                    
+                    // Check if order is assigned to current driver
+                    const isAssignedToDriver = order.driverId === currentDriverAuthId || 
+                                             (order.driver && order.driver.id === currentDriverAuthId);
+                    
+                    if (isAssignedToDriver) {
+                        hasOrders = true;
+                        
+                        // Calculate order total safely
+                        let orderTotal = calculateOrderTotal(order);
+
+                        // Get customer name safely
+                        const customerName = userData.username || 
+                                           (userData.firstName && userData.lastName ? 
+                                            `${userData.firstName} ${userData.lastName}` : 
+                                            'Unknown Customer');
+
+                        // Get order status safely
+                        const orderStatus = order.status || 'Pending';
+                        const statusClass = orderStatus.toLowerCase().replace(' ', '');
+
+                        // Create table row
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="order-id-cell full-text">${orderId}</td>
+                            <td class="full-text">${customerName}</td>
+                            <td><span class="status-badge status-${statusClass}">
+                                ${orderStatus}
+                            </span></td>
+                            <td>$${orderTotal.toFixed(2)}</td>
+                            <td><button class="btn btn-sm btn-outline-primary action-btn" 
+                                onclick="viewOrderDetails('${userId}', '${orderId}', event)">
+                                View
+                            </button></td>
+                        `;
+                        ordersTableBody.appendChild(row);
+                    }
+                });
+            });
+
+            if (!hasOrders) {
+                ordersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No orders assigned to you</td></tr>';
+            }
         }
 
         // Load orders assigned to the current driver
         function loadDriverOrders() {
-            const ordersRef = database.ref('users');
-            ordersRef.on('value', (snapshot) => {
-                const ordersTableBody = document.getElementById('ordersTableBody');
-                ordersTableBody.innerHTML = '';
-                let hasOrders = false;
+            const ordersTableBody = document.getElementById('ordersTableBody');
+            ordersTableBody.innerHTML = `
+                <tr><td colspan="5" class="text-center py-3">
+                    <span class="loading-spinner me-2"></span>
+                    Loading orders...
+                </td></tr>
+            `;
 
-                snapshot.forEach((userSnapshot) => {
-                    const userId = userSnapshot.key;
-                    const userOrders = userSnapshot.child('orders').val();
-                    const userData = userSnapshot.child('userData').val() || {};
-                    
-                    if (userOrders) {
-                        Object.keys(userOrders).forEach(orderId => {
-                            const order = userOrders[orderId];
-                            
-                            // Only show orders assigned to the current driver
-                            if (order.driverId === currentDriverAuthId) {
-                                hasOrders = true;
-                                
-                                // Calculate order total if not already set
-                                let orderTotal = order.total || 0;
-                                if (!order.total && order.items) {
-                                    orderTotal = order.items.reduce((sum, item) => {
-                                        return sum + (parseFloat(item.price) * parseInt(item.quantity));
-                                    }, 0);
-                                }
-
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td class="order-id-cell full-text">${orderId}</td>
-                                    <td class="full-text">${userData.username || 'Unknown Customer'}</td>
-                                    <td><span class="status-badge status-${order.status ? order.status.toLowerCase().replace(' ', '') : 'pending'}">
-                                        ${order.status || 'Pending'}
-                                    </span></td>
-                                    <td>$${orderTotal.toFixed(2)}</td>
-                                    <td><button class="btn btn-sm btn-outline-primary action-btn" onclick="viewOrderDetails('${userId}', '${orderId}', event)">View</button></td>
-                                `;
-                                ordersTableBody.appendChild(row);
-                            }
-                        });
-                    }
-                });
-
-                if (!hasOrders) {
-                    ordersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No orders found</td></tr>';
-                }
+            const usersRef = database.ref('users');
+            usersRef.once('value').then((snapshot) => {
+                updateOrdersList(snapshot);
+            }).catch(error => {
+                console.error('Error loading orders:', error);
+                ordersTableBody.innerHTML = `
+                    <tr><td colspan="5" class="text-center text-danger py-3">
+                        Error loading orders. <button class="btn btn-sm btn-link" onclick="loadDriverOrders()">Try again</button>
+                    </td></tr>
+                `;
+                showToast('Failed to load orders', 'error');
             });
         }
 
@@ -656,10 +689,22 @@
         function viewOrderDetails(userId, orderId, event) {
             if (event) event.stopPropagation();
             
+            // Show loading state
+            const orderDetails = document.getElementById('orderDetails');
+            orderDetails.style.display = 'none';
+            document.getElementById('noOrderSelected').style.display = 'none';
+            orderDetails.innerHTML = `
+                <div class="text-center py-4">
+                    <span class="loading-spinner me-2"></span>
+                    Loading order details...
+                </div>
+            `;
+            orderDetails.style.display = 'block';
+
             selectedOrderId = { userId, orderId };
             
             // First get user details
-            const userRef = database.ref(`usersID/${userId}`);
+            const userRef = database.ref(`users/${userId}`);
             userRef.once('value').then((userSnapshot) => {
                 const userData = userSnapshot.val() || {};
                 
@@ -667,6 +712,10 @@
                 const orderRef = database.ref(`users/${userId}/orders/${orderId}`);
                 return orderRef.once('value').then((orderSnapshot) => {
                     const order = orderSnapshot.val();
+                    
+                    if (!order) {
+                        throw new Error('Order not found');
+                    }
                     
                     // Update UI with customer information
                     document.getElementById('customerName').textContent = userData.username || 'Unknown Customer';
@@ -679,12 +728,7 @@
                     document.getElementById('detailOrderStatus').className = `status-badge status-${order.status ? order.status.toLowerCase().replace(' ', '') : 'pending'}`;
                     
                     // Calculate and display order total
-                    let orderTotal = order.total || 0;
-                    if (!order.total && order.items) {
-                        orderTotal = order.items.reduce((sum, item) => {
-                            return sum + (parseFloat(item.price) * parseInt(item.quantity));
-                        }, 0);
-                    }
+                    let orderTotal = calculateOrderTotal(order);
                     document.getElementById('detailOrderTotal').textContent = `$${orderTotal.toFixed(2)}`;
                     
                     // Display order date if available
@@ -692,19 +736,10 @@
                                     (order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A');
                     document.getElementById('detailOrderDate').textContent = orderDate;
 
-                    // Update driver information from the current driver's profile
-                    const driverRef = database.ref(`drivers/${currentDriverAuthId}`);
-                    driverRef.once('value').then((driverSnapshot) => {
-                        const driverData = driverSnapshot.val() || {};
-                        const usersIDRef = database.ref(`usersID/${currentDriverAuthId}`);
-                        return usersIDRef.once('value').then((userSnapshot) => {
-                            const userData = userSnapshot.val() || {};
-                            
-                            document.getElementById('driverName').textContent = driverData.name || userData.username || "Not Assigned";
-                            document.getElementById('driverId').textContent = currentDriverAuthId;
-                            document.getElementById('driverContact').textContent = userData.phone || "N/A";
-                        });
-                    });
+                    // Update driver information
+                    document.getElementById('driverName').textContent = order.driver ? order.driver.name : 'Not Assigned';
+                    document.getElementById('driverId').textContent = order.driverId || 'N/A';
+                    document.getElementById('driverContact').textContent = order.driver ? order.driver.contact : 'N/A';
 
                     // Update delivery time display
                     if (order.deliveryTime) {
@@ -719,15 +754,18 @@
                     // Update order items
                     const orderItemsList = document.getElementById('orderItemsList');
                     orderItemsList.innerHTML = '';
-                    if (order.items && order.items.length > 0) {
+                    if (order.items && Array.isArray(order.items)) {
                         order.items.forEach(item => {
-                            const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+                            const price = parseFloat(item.price) || 0;
+                            const quantity = parseInt(item.quantity) || 0;
+                            const total = (price * quantity).toFixed(2);
+                            
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td class="full-text">${item.name}</td>
-                                <td>${item.quantity}</td>
-                                <td>$${parseFloat(item.price).toFixed(2)}</td>
-                                <td>$${itemTotal.toFixed(2)}</td>
+                                <td class="full-text">${item.name || 'Unknown Item'}</td>
+                                <td>${quantity}</td>
+                                <td>$${price.toFixed(2)}</td>
+                                <td>$${total}</td>
                             `;
                             orderItemsList.appendChild(row);
                         });
@@ -737,14 +775,34 @@
                     document.getElementById('btnStartDelivery').style.display = order.status === 'Pending' ? 'block' : 'none';
                     document.getElementById('btnCompleteDelivery').style.display = order.status === 'Shipped' ? 'block' : 'none';
 
-                    // Show the details section
-                    document.getElementById('noOrderSelected').style.display = 'none';
-                    document.getElementById('orderDetails').style.display = 'block';
+                    // Show the full order details
+                    orderDetails.innerHTML = document.getElementById('orderDetails').innerHTML;
                 });
             }).catch(error => {
                 console.error('Error loading order details:', error);
-                alert('Failed to load order details');
+                orderDetails.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load order details: ${error.message}
+                        <button class="btn btn-sm btn-link" onclick="viewOrderDetails('${userId}', '${orderId}')">Try again</button>
+                    </div>
+                `;
             });
+        }
+
+        // Helper function to calculate order total
+        function calculateOrderTotal(order) {
+            if (order && order.total) {
+                return parseFloat(order.total) || 0;
+            }
+            if (order && order.items && Array.isArray(order.items)) {
+                return order.items.reduce((sum, item) => {
+                    const price = parseFloat(item.price) || 0;
+                    const quantity = parseInt(item.quantity) || 0;
+                    return sum + (price * quantity);
+                }, 0);
+            }
+            return 0;
         }
 
         // Update delivery time for the current order
@@ -762,37 +820,12 @@
                 .then(() => {
                     // Update the displayed delivery time
                     document.getElementById('deliveryTimeDisplay').textContent = deliveryDate.toLocaleString();
+                    showToast('Delivery time updated successfully');
                 })
                 .catch(error => {
                     console.error('Error updating delivery time:', error);
-                    alert('Failed to update delivery time');
+                    showToast('Failed to update delivery time', 'error');
                 });
-        }
-
-        // Load spare parts from Firebase
-        function loadSpareParts() {
-            const partsRef = database.ref('spareParts');
-            partsRef.on('value', (snapshot) => {
-                const partsData = snapshot.val();
-                const partsTableBody = document.getElementById('sparePartsTableBody');
-                partsTableBody.innerHTML = '';
-
-                if (partsData) {
-                    Object.keys(partsData).forEach(partId => {
-                        const part = partsData[partId];
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="full-text">${part.name}</td>
-                            <td>$${parseFloat(part.price).toFixed(2)}</td>
-                            <td>${part.stock}</td>
-                            <td>${part.sold || 0}</td>
-                        `;
-                        partsTableBody.appendChild(row);
-                    });
-                } else {
-                    partsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No spare parts found</td></tr>';
-                }
-            });
         }
 
         // Update order status
@@ -817,6 +850,7 @@
                         const userData = userSnapshot.val() || {};
                         
                         updates[`users/${userId}/orders/${orderId}/driver`] = {
+                            id: currentDriverAuthId,
                             name: driverData.name || userData.username || "Driver",
                             contact: userData.phone || "N/A"
                         };
@@ -824,12 +858,12 @@
                         return database.ref().update(updates);
                     });
                 }).then(() => {
-                    alert(`Order status updated to ${newStatus}`);
+                    showToast(`Order status updated to ${newStatus}`);
                     viewOrderDetails(userId, orderId); // Refresh the view
                     
                     // If status is delivered, increment driver's delivery count
                     if (newStatus === 'Delivered') {
-                        const driverRef = database.ref(`drivers/${currentDriverId}`);
+                        const driverRef = database.ref(`drivers/${currentDriverAuthId}`);
                         driverRef.transaction((driver) => {
                             if (driver) {
                                 driver.totalDeliveries = (driver.totalDeliveries || 0) + 1;
@@ -843,17 +877,17 @@
                     }
                 }).catch(error => {
                     console.error('Error updating order status:', error);
-                    alert('Failed to update order status');
+                    showToast('Failed to update order status', 'error');
                 });
             } else {
                 database.ref().update(updates)
                     .then(() => {
-                        alert(`Order status updated to ${newStatus}`);
+                        showToast(`Order status updated to ${newStatus}`);
                         viewOrderDetails(userId, orderId); // Refresh the view
                     })
                     .catch(error => {
                         console.error('Error updating order status:', error);
-                        alert('Failed to update order status');
+                        showToast('Failed to update order status', 'error');
                     });
             }
         }
@@ -869,13 +903,13 @@
 
             database.ref(`drivers/${currentDriverId}`).update(updates)
                 .then(() => {
-                    alert('Profile updated successfully');
+                    showToast('Profile updated successfully');
                     editProfileModal.hide();
                     loadDriverProfile(); // Refresh profile display
                 })
                 .catch(error => {
                     console.error('Error updating profile:', error);
-                    alert('Failed to update profile');
+                    showToast('Failed to update profile', 'error');
                 });
         }
 
@@ -885,7 +919,7 @@
                 window.location.href = 'loginandreg.html';
             }).catch(error => {
                 console.error('Error signing out:', error);
-                alert('Error signing out');
+                showToast('Error signing out', 'error');
             });
         }
 
@@ -894,12 +928,38 @@
             editProfileModal.show();
         }
 
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast show align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toast.role = 'alert';
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
         // Expose functions to global scope for HTML onclick handlers
         window.viewOrderDetails = viewOrderDetails;
         window.updateOrderStatus = updateOrderStatus;
         window.openEditProfileModal = openEditProfileModal;
         window.signOut = signOut;
         window.updateDeliveryTime = updateDeliveryTime;
+        window.loadDriverOrders = loadDriverOrders;
     </script>
 </body>
 </html>
